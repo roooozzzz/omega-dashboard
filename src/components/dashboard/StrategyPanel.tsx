@@ -27,7 +27,7 @@ const strategies: Strategy[] = [
   {
     id: "core",
     name: "长线 · THE CORE",
-    subtitle: "选"质" — 护城河筛选",
+    subtitle: "选「质」— 护城河筛选",
     allocation: 50,
     icon: <Building2 className="w-5 h-5" />,
     color: "bg-stripe-ink",
@@ -65,7 +65,7 @@ const strategies: Strategy[] = [
   {
     id: "flow",
     name: "中线 · THE FLOW",
-    subtitle: "借"势" — 动量跟踪",
+    subtitle: "借「势」— 动量跟踪",
     allocation: 30,
     icon: <TrendingUp className="w-5 h-5" />,
     color: "bg-stripe-purple",
@@ -96,7 +96,7 @@ const strategies: Strategy[] = [
   {
     id: "swing",
     name: "短线 · THE SWING",
-    subtitle: "找"位" — 情绪捕捉",
+    subtitle: "找「位」— 情绪捕捉",
     allocation: 20,
     icon: <Zap className="w-5 h-5" />,
     color: "bg-stripe-warning",
