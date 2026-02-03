@@ -1,6 +1,6 @@
 /**
  * Yahoo Finance 数据获取服务
- * 使用非官方 API 获取实时行情和历史数据
+ * 使用多种方式获取实时行情和历史数据
  */
 
 interface YahooQuote {
@@ -34,8 +34,8 @@ interface YahooHistoricalData {
   adjClose: number;
 }
 
-// Yahoo Finance API 基础 URL
-const YAHOO_BASE_URL = "https://query1.finance.yahoo.com/v8/finance";
+// Yahoo Finance API URL - 使用 v7 版本更稳定
+const YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote";
 const YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
 
 /**
@@ -43,73 +43,110 @@ const YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
  */
 export async function getYahooQuote(symbols: string[]): Promise<YahooQuote[]> {
   const symbolsStr = symbols.join(",");
-  const url = `${YAHOO_BASE_URL}/quote?symbols=${symbolsStr}`;
+  
+  // 尝试多个 API 端点
+  const urls = [
+    `${YAHOO_QUOTE_URL}?symbols=${symbolsStr}`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbolsStr}`,
+  ];
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-    });
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      throw new Error(`Yahoo Finance API error: ${response.status}`);
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`Yahoo Finance API returned ${response.status} for ${url}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const results = data.quoteResponse?.result;
+      
+      if (results && results.length > 0) {
+        return results;
+      }
+    } catch (error) {
+      console.warn(`Yahoo Finance request failed for ${url}:`, error);
+      continue;
     }
-
-    const data = await response.json();
-    return data.quoteResponse?.result || [];
-  } catch (error) {
-    console.error("Failed to fetch Yahoo quote:", error);
-    return [];
   }
+
+  console.error("All Yahoo Finance endpoints failed");
+  return [];
 }
 
 /**
  * 获取历史数据
- * @param symbol 股票代码
- * @param range 时间范围: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
- * @param interval 数据间隔: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
  */
 export async function getYahooHistory(
   symbol: string,
   range = "6mo",
   interval = "1d"
 ): Promise<YahooHistoricalData[]> {
-  const url = `${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`;
+  const urls = [
+    `${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?range=${range}&interval=${interval}`,
+  ];
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-    });
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      throw new Error(`Yahoo Finance API error: ${response.status}`);
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`Yahoo chart API returned ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const result = data.chart?.result?.[0];
+
+      if (!result) continue;
+
+      const timestamps = result.timestamp || [];
+      const quotes = result.indicators?.quote?.[0] || {};
+      const adjClose = result.indicators?.adjclose?.[0]?.adjclose || [];
+
+      if (timestamps.length === 0) continue;
+
+      return timestamps.map((ts: number, i: number) => ({
+        date: new Date(ts * 1000),
+        open: quotes.open?.[i] || 0,
+        high: quotes.high?.[i] || 0,
+        low: quotes.low?.[i] || 0,
+        close: quotes.close?.[i] || 0,
+        volume: quotes.volume?.[i] || 0,
+        adjClose: adjClose[i] || quotes.close?.[i] || 0,
+      }));
+    } catch (error) {
+      console.warn(`Yahoo chart request failed:`, error);
+      continue;
     }
-
-    const data = await response.json();
-    const result = data.chart?.result?.[0];
-
-    if (!result) return [];
-
-    const timestamps = result.timestamp || [];
-    const quotes = result.indicators?.quote?.[0] || {};
-    const adjClose = result.indicators?.adjclose?.[0]?.adjclose || [];
-
-    return timestamps.map((ts: number, i: number) => ({
-      date: new Date(ts * 1000),
-      open: quotes.open?.[i] || 0,
-      high: quotes.high?.[i] || 0,
-      low: quotes.low?.[i] || 0,
-      close: quotes.close?.[i] || 0,
-      volume: quotes.volume?.[i] || 0,
-      adjClose: adjClose[i] || quotes.close?.[i] || 0,
-    }));
-  } catch (error) {
-    console.error("Failed to fetch Yahoo history:", error);
-    return [];
   }
+
+  return [];
 }
 
 /**
@@ -127,18 +164,21 @@ export async function calculateRSRating(symbol: string): Promise<{
     return { rsRating: 50, return6m: 0, return3m: 0, return1m: 0 };
   }
 
-  const latestPrice = history[history.length - 1].close;
-  const price6mAgo = history[0].close;
-  const price3mAgo = history[Math.floor(history.length / 2)]?.close || price6mAgo;
-  const price1mAgo = history[Math.max(0, history.length - 22)]?.close || latestPrice;
+  const validHistory = history.filter(h => h.close > 0);
+  if (validHistory.length < 2) {
+    return { rsRating: 50, return6m: 0, return3m: 0, return1m: 0 };
+  }
+
+  const latestPrice = validHistory[validHistory.length - 1].close;
+  const price6mAgo = validHistory[0].close;
+  const price3mAgo = validHistory[Math.floor(validHistory.length / 2)]?.close || price6mAgo;
+  const price1mAgo = validHistory[Math.max(0, validHistory.length - 22)]?.close || latestPrice;
 
   const return6m = ((latestPrice - price6mAgo) / price6mAgo) * 100;
   const return3m = ((latestPrice - price3mAgo) / price3mAgo) * 100;
   const return1m = ((latestPrice - price1mAgo) / price1mAgo) * 100;
 
-  // 简化版 RS 计算：将 6 个月收益率映射到 1-99
-  // 实际 IBD RS 需要与全市场股票比较
-  // 这里假设正收益 > 50, 负收益 < 50
+  // 简化版 RS 计算
   let rsRating = 50 + return6m;
   rsRating = Math.min(99, Math.max(1, Math.round(rsRating)));
 
@@ -158,7 +198,11 @@ export async function calculateRSI(
     return { rsi: 50, signal: "neutral" };
   }
 
-  const closes = history.map((h) => h.close);
+  const closes = history.map((h) => h.close).filter(c => c > 0);
+  if (closes.length < period + 1) {
+    return { rsi: 50, signal: "neutral" };
+  }
+
   const recentCloses = closes.slice(-period - 1);
 
   let gains = 0;
@@ -191,9 +235,10 @@ export function calculateBollingerBands(
   period = 20,
   stdDevMultiplier = 2
 ): { upper: number; middle: number; lower: number; position: "above" | "middle" | "below" } | null {
-  if (closes.length < period) return null;
+  const validCloses = closes.filter(c => c > 0);
+  if (validCloses.length < period) return null;
 
-  const recentCloses = closes.slice(-period);
+  const recentCloses = validCloses.slice(-period);
   const middle = recentCloses.reduce((a, b) => a + b, 0) / period;
   
   const squaredDiffs = recentCloses.map((c) => Math.pow(c - middle, 2));
@@ -203,7 +248,7 @@ export function calculateBollingerBands(
   const upper = middle + stdDevMultiplier * stdDev;
   const lower = middle - stdDevMultiplier * stdDev;
 
-  const currentPrice = closes[closes.length - 1];
+  const currentPrice = validCloses[validCloses.length - 1];
   let position: "above" | "middle" | "below" = "middle";
   if (currentPrice > upper) position = "above";
   else if (currentPrice < lower) position = "below";
@@ -250,7 +295,7 @@ export async function getStockFullData(symbol: string) {
   return {
     // 基础信息
     symbol: quote.symbol,
-    name: quote.shortName || quote.longName,
+    name: quote.shortName || quote.longName || symbol,
     price: quote.regularMarketPrice,
     change: quote.regularMarketChange,
     changePercent: quote.regularMarketChangePercent,
@@ -274,5 +319,53 @@ export async function getStockFullData(symbol: string) {
     bollinger,
     
     updatedAt: new Date().toISOString(),
+  };
+}
+
+// 模拟数据（当 API 不可用时使用）
+export function getMockMarketIndices() {
+  return {
+    sp500: {
+      symbol: "^GSPC",
+      shortName: "S&P 500",
+      longName: "S&P 500",
+      regularMarketPrice: 5234.18,
+      regularMarketChange: 64.32,
+      regularMarketChangePercent: 1.24,
+      regularMarketVolume: 2500000000,
+      regularMarketPreviousClose: 5169.86,
+      regularMarketOpen: 5175.00,
+      regularMarketDayHigh: 5245.00,
+      regularMarketDayLow: 5165.00,
+      fiftyTwoWeekHigh: 5400.00,
+      fiftyTwoWeekLow: 4200.00,
+      marketCap: 0,
+      trailingPE: 0,
+      forwardPE: 0,
+      priceToBook: 0,
+      dividendYield: 0,
+    },
+    vix: {
+      symbol: "^VIX",
+      shortName: "VIX",
+      longName: "CBOE Volatility Index",
+      regularMarketPrice: 14.32,
+      regularMarketChange: -0.31,
+      regularMarketChangePercent: -2.15,
+      regularMarketVolume: 0,
+      regularMarketPreviousClose: 14.63,
+      regularMarketOpen: 14.50,
+      regularMarketDayHigh: 15.00,
+      regularMarketDayLow: 14.00,
+      fiftyTwoWeekHigh: 35.00,
+      fiftyTwoWeekLow: 12.00,
+      marketCap: 0,
+      trailingPE: 0,
+      forwardPE: 0,
+      priceToBook: 0,
+      dividendYield: 0,
+    },
+    nasdaq: null,
+    dow: null,
   };
 }
