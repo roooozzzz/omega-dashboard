@@ -1,7 +1,8 @@
 "use client";
 
-import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { useMarketData } from "@/hooks/useData";
 
 interface MarketCard {
   label: string;
@@ -12,7 +13,8 @@ interface MarketCard {
   statusLabel?: string;
 }
 
-const marketData: MarketCard[] = [
+// 静态数据作为后备
+const fallbackData: MarketCard[] = [
   {
     label: "标普500指数",
     value: "5,234.18",
@@ -42,12 +44,73 @@ const marketData: MarketCard[] = [
 ];
 
 export function MarketStatusBar() {
+  const { data: marketData, loading, error } = useMarketData(60000);
+
+  // 使用真实数据或后备数据
+  const displayData: MarketCard[] = marketData
+    ? [
+        {
+          label: "标普500指数",
+          value: marketData.sp500
+            ? marketData.sp500.value.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+            : "--",
+          change: marketData.sp500
+            ? `${marketData.sp500.changePercent >= 0 ? "+" : ""}${marketData.sp500.changePercent.toFixed(2)}%`
+            : undefined,
+          changeType: marketData.sp500
+            ? marketData.sp500.changePercent >= 0
+              ? "positive"
+              : "negative"
+            : "neutral",
+        },
+        {
+          label: "VIX 恐慌指数",
+          value: marketData.vix
+            ? marketData.vix.value.toFixed(2)
+            : "--",
+          change: marketData.vix
+            ? `${marketData.vix.changePercent >= 0 ? "+" : ""}${marketData.vix.changePercent.toFixed(2)}%`
+            : undefined,
+          changeType: marketData.vix
+            ? marketData.vix.changePercent <= 0
+              ? "positive"
+              : "negative"
+            : "neutral",
+          status: marketData.vix
+            ? marketData.vix.value < 20
+              ? "success"
+              : marketData.vix.value < 30
+              ? "warning"
+              : "danger"
+            : "neutral",
+          statusLabel: marketData.vix?.level || "加载中",
+        },
+        {
+          label: "熔断器",
+          value: "关闭",
+          status: "success",
+          statusLabel: "正常",
+        },
+        {
+          label: "今日信号",
+          value: "7",
+          status: "neutral",
+          statusLabel: "待审核",
+        },
+      ]
+    : fallbackData;
+
   return (
     <div className="grid grid-cols-4 gap-4 mb-6">
-      {marketData.map((card) => (
+      {displayData.map((card) => (
         <div
           key={card.label}
-          className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]"
+          className={`bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)] ${
+            loading ? "animate-pulse" : ""
+          }`}
         >
           <p className="text-sm text-stripe-ink-lighter mb-1">{card.label}</p>
           <div className="flex items-baseline gap-2">
@@ -80,6 +143,13 @@ export function MarketStatusBar() {
           )}
         </div>
       ))}
+      
+      {/* 显示错误提示 */}
+      {error && (
+        <div className="col-span-4 text-center text-sm text-stripe-danger">
+          数据加载失败，显示缓存数据
+        </div>
+      )}
     </div>
   );
 }
