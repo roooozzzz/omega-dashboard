@@ -1,55 +1,70 @@
-import { TrendingUp, TrendingDown, Bell, CheckCircle } from "lucide-react";
+"use client";
+
+import { TrendingUp, TrendingDown, Eye, AlertCircle } from "lucide-react";
 
 interface StatCard {
   label: string;
-  value: string | number;
+  value: string;
+  change?: string;
+  changeType?: "positive" | "negative" | "neutral";
   icon: React.ReactNode;
-  subtext?: string;
 }
 
-export function SignalsStats() {
-  const stats: StatCard[] = [
-    {
-      label: "Active Signals",
-      value: 12,
-      icon: <Bell className="w-4 h-4 text-stripe-purple" />,
-      subtext: "4 high priority",
-    },
-    {
-      label: "Buy Signals",
-      value: 7,
-      icon: <TrendingUp className="w-4 h-4 text-stripe-success" />,
-      subtext: "3 today",
-    },
-    {
-      label: "Sell Signals",
-      value: 2,
-      icon: <TrendingDown className="w-4 h-4 text-stripe-danger" />,
-      subtext: "1 today",
-    },
-    {
-      label: "Win Rate (30d)",
-      value: "67%",
-      icon: <CheckCircle className="w-4 h-4 text-stripe-success" />,
-      subtext: "18/27 executed",
-    },
-  ];
+const stats: StatCard[] = [
+  {
+    label: "活跃信号",
+    value: "23",
+    change: "+5 今日",
+    changeType: "positive",
+    icon: <AlertCircle className="w-5 h-5 text-stripe-purple" />,
+  },
+  {
+    label: "买入信号",
+    value: "8",
+    icon: <TrendingUp className="w-5 h-5 text-stripe-success" />,
+  },
+  {
+    label: "卖出信号",
+    value: "4",
+    icon: <TrendingDown className="w-5 h-5 text-stripe-danger" />,
+  },
+  {
+    label: "观望信号",
+    value: "11",
+    icon: <Eye className="w-5 h-5 text-stripe-warning" />,
+  },
+];
 
+export function SignalsStats() {
   return (
     <div className="grid grid-cols-4 gap-4 mb-6">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white rounded-lg border border-stripe-border p-4 shadow-[var(--shadow-omega-sm)]"
+          className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-stripe-ink-lighter">{stat.label}</span>
+            <p className="text-sm text-stripe-ink-lighter">{stat.label}</p>
             {stat.icon}
           </div>
-          <p className="text-2xl font-semibold text-stripe-ink">{stat.value}</p>
-          {stat.subtext && (
-            <p className="text-xs text-stripe-ink-lighter mt-1">{stat.subtext}</p>
-          )}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-stripe-ink">
+              {stat.value}
+            </span>
+            {stat.change && (
+              <span
+                className={`text-sm ${
+                  stat.changeType === "positive"
+                    ? "text-stripe-success"
+                    : stat.changeType === "negative"
+                    ? "text-stripe-danger"
+                    : "text-stripe-ink-lighter"
+                }`}
+              >
+                {stat.change}
+              </span>
+            )}
+          </div>
         </div>
       ))}
     </div>

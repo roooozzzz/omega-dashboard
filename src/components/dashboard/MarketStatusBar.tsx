@@ -1,63 +1,83 @@
-import { TrendingUp, Activity, Shield, Bell } from "lucide-react";
+"use client";
+
+import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 
 interface MarketCard {
   label: string;
   value: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  subtitleColor?: string;
+  change?: string;
+  changeType?: "positive" | "negative" | "neutral";
+  status?: "success" | "warning" | "danger" | "neutral";
+  statusLabel?: string;
 }
 
 const marketData: MarketCard[] = [
   {
-    label: "S&P 500",
+    label: "标普500指数",
     value: "5,234.18",
-    subtitle: "+1.24% above MA200",
-    icon: <TrendingUp className="w-4 h-4 text-stripe-success" />,
-    subtitleColor: "text-stripe-success",
+    change: "+1.24%",
+    changeType: "positive",
   },
   {
-    label: "VIX Index",
-    value: "16.8",
-    subtitle: "Normal range (<25)",
-    icon: <Activity className="w-4 h-4 text-stripe-ink-lighter" />,
-    subtitleColor: "text-stripe-ink-lighter",
+    label: "VIX 恐慌指数",
+    value: "14.32",
+    change: "-2.15%",
+    changeType: "positive",
+    status: "success",
+    statusLabel: "低波动",
   },
   {
-    label: "Circuit Breaker",
-    value: "",
-    subtitle: "All strategies active",
-    icon: <Shield className="w-4 h-4 text-stripe-success" />,
-    subtitleColor: "text-stripe-ink-lighter",
+    label: "熔断器",
+    value: "关闭",
+    status: "success",
+    statusLabel: "正常",
   },
   {
-    label: "Today's Signals",
-    value: "3",
-    subtitle: "Long: 1 · Mid: 1 · Short: 1",
-    icon: <Bell className="w-4 h-4 text-stripe-purple" />,
-    subtitleColor: "text-stripe-ink-lighter",
+    label: "今日信号",
+    value: "7",
+    status: "neutral",
+    statusLabel: "待审核",
   },
 ];
 
 export function MarketStatusBar() {
   return (
-    <div className="grid grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-4 gap-4 mb-6">
       {marketData.map((card) => (
         <div
           key={card.label}
-          className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)] hover:shadow-[var(--shadow-omega)] transition-shadow duration-150"
+          className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-stripe-ink-lighter">{card.label}</span>
-            {card.icon}
+          <p className="text-sm text-stripe-ink-lighter mb-1">{card.label}</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-stripe-ink">
+              {card.value}
+            </span>
+            {card.change && (
+              <span
+                className={`flex items-center gap-0.5 text-sm font-medium ${
+                  card.changeType === "positive"
+                    ? "text-stripe-success"
+                    : card.changeType === "negative"
+                    ? "text-stripe-danger"
+                    : "text-stripe-ink-lighter"
+                }`}
+              >
+                {card.changeType === "positive" ? (
+                  <TrendingUp className="w-3.5 h-3.5" />
+                ) : card.changeType === "negative" ? (
+                  <TrendingDown className="w-3.5 h-3.5" />
+                ) : null}
+                {card.change}
+              </span>
+            )}
           </div>
-          {card.label === "Circuit Breaker" ? (
-            <StatusBadge variant="success">OFF</StatusBadge>
-          ) : (
-            <p className="text-2xl font-semibold text-stripe-ink">{card.value}</p>
+          {card.status && card.statusLabel && (
+            <div className="mt-2">
+              <StatusBadge variant={card.status}>{card.statusLabel}</StatusBadge>
+            </div>
           )}
-          <p className={`text-sm mt-1 ${card.subtitleColor}`}>{card.subtitle}</p>
         </div>
       ))}
     </div>

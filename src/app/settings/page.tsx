@@ -8,8 +8,8 @@ export default function SettingsPage() {
       <Sidebar />
       <main className="ml-60 min-h-screen">
         <Header
-          title="Settings"
-          description="Configure your trading system preferences"
+          title="系统设置"
+          description="配置交易系统偏好"
         />
         <div className="p-8 max-w-4xl">
           <SettingsForm />

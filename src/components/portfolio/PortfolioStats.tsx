@@ -1,69 +1,76 @@
-import {
-  DollarSign,
-  TrendingUp,
-  PieChart,
-  Target,
-} from "lucide-react";
+"use client";
+
+import { Wallet, TrendingUp, Briefcase, DollarSign } from "lucide-react";
 
 interface StatCard {
   label: string;
   value: string;
-  icon: React.ReactNode;
   change?: string;
-  changeUp?: boolean;
+  changeType?: "positive" | "negative" | "neutral";
+  icon: React.ReactNode;
 }
 
-export function PortfolioStats() {
-  const stats: StatCard[] = [
-    {
-      label: "Total Value",
-      value: "$1,247,832",
-      icon: <DollarSign className="w-4 h-4 text-stripe-purple" />,
-      change: "+$23,450 today",
-      changeUp: true,
-    },
-    {
-      label: "Total Return",
-      value: "+24.78%",
-      icon: <TrendingUp className="w-4 h-4 text-stripe-success" />,
-      change: "vs SPX +18.2%",
-      changeUp: true,
-    },
-    {
-      label: "Positions",
-      value: "12",
-      icon: <PieChart className="w-4 h-4 text-stripe-info" />,
-      change: "Long: 8 · Mid: 3 · Short: 1",
-    },
-    {
-      label: "Cash Available",
-      value: "$147,832",
-      icon: <Target className="w-4 h-4 text-stripe-ink-light" />,
-      change: "11.8% of portfolio",
-    },
-  ];
+const stats: StatCard[] = [
+  {
+    label: "总市值",
+    value: "$1,254,832",
+    change: "+12.5%",
+    changeType: "positive",
+    icon: <Wallet className="w-5 h-5 text-stripe-purple" />,
+  },
+  {
+    label: "总收益",
+    value: "+$142,567",
+    change: "+11.36%",
+    changeType: "positive",
+    icon: <TrendingUp className="w-5 h-5 text-stripe-success" />,
+  },
+  {
+    label: "持仓数量",
+    value: "15",
+    change: "3 策略",
+    changeType: "neutral",
+    icon: <Briefcase className="w-5 h-5 text-stripe-ink-light" />,
+  },
+  {
+    label: "可用现金",
+    value: "$125,483",
+    change: "10%",
+    changeType: "neutral",
+    icon: <DollarSign className="w-5 h-5 text-stripe-warning" />,
+  },
+];
 
+export function PortfolioStats() {
   return (
     <div className="grid grid-cols-4 gap-4 mb-6">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="bg-white rounded-lg border border-stripe-border p-4 shadow-[var(--shadow-omega-sm)]"
+          className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-stripe-ink-lighter">{stat.label}</span>
+            <p className="text-sm text-stripe-ink-lighter">{stat.label}</p>
             {stat.icon}
           </div>
-          <p className="text-2xl font-semibold text-stripe-ink">{stat.value}</p>
-          {stat.change && (
-            <p
-              className={`text-xs mt-1 ${
-                stat.changeUp ? "text-stripe-success" : "text-stripe-ink-lighter"
-              }`}
-            >
-              {stat.change}
-            </p>
-          )}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-stripe-ink">
+              {stat.value}
+            </span>
+            {stat.change && (
+              <span
+                className={`text-sm ${
+                  stat.changeType === "positive"
+                    ? "text-stripe-success"
+                    : stat.changeType === "negative"
+                    ? "text-stripe-danger"
+                    : "text-stripe-ink-lighter"
+                }`}
+              >
+                {stat.change}
+              </span>
+            )}
+          </div>
         </div>
       ))}
     </div>

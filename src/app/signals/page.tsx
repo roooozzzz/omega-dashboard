@@ -10,17 +10,17 @@ export default function SignalsPage() {
       <Sidebar />
       <main className="ml-60 min-h-screen">
         <Header
-          title="Signals"
-          description="Trading signals from all three strategies"
+          title="交易信号"
+          description="三层策略信号历史与实时追踪"
         />
         <div className="p-8">
-          {/* Stats Overview */}
+          {/* 统计概览 */}
           <SignalsStats />
 
-          {/* Filters */}
+          {/* 筛选器 */}
           <SignalsFilters />
 
-          {/* Signals Table */}
+          {/* 信号表格 */}
           <SignalsTable />
         </div>
       </main>

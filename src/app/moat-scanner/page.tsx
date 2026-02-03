@@ -13,17 +13,17 @@ export default function MoatScannerPage() {
       <Sidebar />
       <main className="ml-60 min-h-screen">
         <Header
-          title="Moat Scanner"
-          description="AI-powered moat analysis and approval workflow"
+          title="护城河扫描"
+          description="AI 驱动的护城河分析与人工审批工作流"
         />
         <div className="p-8">
-          {/* Stats Overview */}
+          {/* 统计概览 */}
           <MoatStats />
 
-          {/* Filters */}
+          {/* 筛选器 */}
           <MoatFilters />
 
-          {/* Proposals List */}
+          {/* 提案列表 */}
           <div className="space-y-4">
             {demoProposals.map((proposal) => (
               <MoatDetailCard key={proposal.id} proposal={proposal} />

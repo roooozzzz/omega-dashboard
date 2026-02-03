@@ -1,151 +1,201 @@
-import { Building2, TrendingUp, Zap } from "lucide-react";
+"use client";
+
+import { Building2, TrendingUp, Zap, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import type { LucideIcon } from "lucide-react";
 
-interface StockItem {
+interface Stock {
   ticker: string;
-  badge: { label: string; variant: "success" | "warning" | "danger" | "info" | "neutral" };
+  name: string;
   signal: string;
-  signalHighlight?: boolean;
+  signalType: "success" | "warning" | "danger" | "neutral";
+  indicator: string;
 }
 
-interface StrategyPanelProps {
-  type: "long" | "mid" | "short";
+interface Strategy {
+  id: string;
+  name: string;
+  subtitle: string;
+  allocation: number;
+  icon: React.ReactNode;
+  color: string;
+  stocks: Stock[];
 }
 
-const strategyConfig: Record<
-  string,
+const strategies: Strategy[] = [
   {
-    title: string;
-    subtitle: string;
-    icon: LucideIcon;
-    stocks: StockItem[];
-  }
-> = {
-  long: {
-    title: "Long Term",
-    subtitle: "50% · Quality Filter",
-    icon: Building2,
+    id: "core",
+    name: "长线 · THE CORE",
+    subtitle: "选"质" — 护城河筛选",
+    allocation: 50,
+    icon: <Building2 className="w-5 h-5" />,
+    color: "bg-stripe-ink",
     stocks: [
       {
         ticker: "NVDA",
-        badge: { label: "Moat: 24", variant: "neutral" },
-        signal: "HOLD",
-      },
-      {
-        ticker: "AAPL",
-        badge: { label: "Moat: 22", variant: "neutral" },
-        signal: "HOLD",
+        name: "英伟达",
+        signal: "持有",
+        signalType: "success",
+        indicator: "护城河 24/35",
       },
       {
         ticker: "MSFT",
-        badge: { label: "Moat: 26", variant: "neutral" },
-        signal: "BUY",
-        signalHighlight: true,
+        name: "微软",
+        signal: "持有",
+        signalType: "success",
+        indicator: "护城河 26/35",
+      },
+      {
+        ticker: "AAPL",
+        name: "苹果",
+        signal: "观望",
+        signalType: "neutral",
+        indicator: "护城河 22/35",
+      },
+      {
+        ticker: "CRWD",
+        name: "CrowdStrike",
+        signal: "待审",
+        signalType: "warning",
+        indicator: "护城河 23/35",
       },
     ],
   },
-  mid: {
-    title: "Mid Term",
-    subtitle: "30% · Momentum Filter",
-    icon: TrendingUp,
+  {
+    id: "flow",
+    name: "中线 · THE FLOW",
+    subtitle: "借"势" — 动量跟踪",
+    allocation: 30,
+    icon: <TrendingUp className="w-5 h-5" />,
+    color: "bg-stripe-purple",
     stocks: [
       {
         ticker: "SMCI",
-        badge: { label: "RS: 94", variant: "neutral" },
-        signal: "Pocket Pivot",
-        signalHighlight: true,
+        name: "超微电脑",
+        signal: "买入",
+        signalType: "success",
+        indicator: "RS 94",
       },
       {
         ticker: "ARM",
-        badge: { label: "RS: 88", variant: "neutral" },
-        signal: "VCP Forming",
+        name: "Arm Holdings",
+        signal: "持有",
+        signalType: "success",
+        indicator: "RS 88",
       },
       {
         ticker: "PLTR",
-        badge: { label: "RS: 82", variant: "neutral" },
-        signal: "Watching",
+        name: "Palantir",
+        signal: "观望",
+        signalType: "neutral",
+        indicator: "RS 82",
       },
     ],
   },
-  short: {
-    title: "Short Term",
-    subtitle: "20% · Sentiment Filter",
-    icon: Zap,
+  {
+    id: "swing",
+    name: "短线 · THE SWING",
+    subtitle: "找"位" — 情绪捕捉",
+    allocation: 20,
+    icon: <Zap className="w-5 h-5" />,
+    color: "bg-stripe-warning",
     stocks: [
       {
         ticker: "GOOGL",
-        badge: { label: "RSI: 18", variant: "danger" },
-        signal: "Oversold · T1",
-        signalHighlight: true,
+        name: "谷歌",
+        signal: "超卖",
+        signalType: "danger",
+        indicator: "RSI 24",
       },
       {
-        ticker: "META",
-        badge: { label: "RSI: 32", variant: "warning" },
-        signal: "Watching",
-      },
-      {
-        ticker: "AMZN",
-        badge: { label: "RSI: 55", variant: "success" },
-        signal: "Normal",
+        ticker: "TSLA",
+        name: "特斯拉",
+        signal: "观望",
+        signalType: "neutral",
+        indicator: "RSI 45",
       },
     ],
   },
-};
+];
 
-export function StrategyPanel({ type }: StrategyPanelProps) {
-  const config = strategyConfig[type];
-  const Icon = config.icon;
-
+function StrategyCard({ strategy }: { strategy: Strategy }) {
   return (
-    <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)] hover:shadow-[var(--shadow-omega)] transition-shadow duration-150">
+    <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)]">
       {/* Header */}
       <div className="p-5 border-b border-stripe-border">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-stripe-bg flex items-center justify-center">
-              <Icon className="w-[18px] h-[18px] text-stripe-ink" strokeWidth={1.75} />
+            <div
+              className={`w-10 h-10 rounded-lg ${strategy.color} flex items-center justify-center text-white`}
+            >
+              {strategy.icon}
             </div>
             <div>
-              <h3 className="font-medium text-sm text-stripe-ink">
-                {config.title}
-              </h3>
-              <p className="text-xs text-stripe-ink-lighter">{config.subtitle}</p>
+              <h3 className="font-semibold text-stripe-ink">{strategy.name}</h3>
+              <p className="text-xs text-stripe-ink-lighter">
+                {strategy.subtitle}
+              </p>
             </div>
           </div>
-          <StatusBadge variant="success">Active</StatusBadge>
+          <div className="text-right">
+            <span className="text-2xl font-semibold text-stripe-ink">
+              {strategy.allocation}%
+            </span>
+            <p className="text-xs text-stripe-ink-lighter">目标仓位</p>
+          </div>
         </div>
       </div>
 
       {/* Stock List */}
-      <div className="p-5 space-y-3">
-        {config.stocks.map((stock, i) => (
+      <div className="divide-y divide-stripe-border-light">
+        {strategy.stocks.map((stock) => (
           <div
             key={stock.ticker}
-            className={`flex items-center justify-between py-2 ${
-              i < config.stocks.length - 1
-                ? "border-b border-stripe-border-light"
-                : ""
-            }`}
+            className="px-5 py-3 flex items-center justify-between hover:bg-stripe-bg transition-colors duration-150"
           >
             <div className="flex items-center gap-3">
-              <span className="font-medium text-sm">{stock.ticker}</span>
-              <StatusBadge variant={stock.badge.variant}>
-                {stock.badge.label}
-              </StatusBadge>
+              <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center">
+                <span className="text-sm font-medium text-stripe-ink">
+                  {stock.ticker[0]}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium text-sm text-stripe-ink">
+                  {stock.ticker}
+                </p>
+                <p className="text-xs text-stripe-ink-lighter">{stock.name}</p>
+              </div>
             </div>
-            <span
-              className={`text-sm ${
-                stock.signalHighlight
-                  ? "font-medium text-stripe-purple"
-                  : "text-stripe-ink-lighter"
-              }`}
-            >
-              {stock.signal}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-stripe-ink-lighter">
+                {stock.indicator}
+              </span>
+              <StatusBadge variant={stock.signalType}>{stock.signal}</StatusBadge>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-stripe-border">
+        <Button
+          variant="ghost"
+          className="w-full justify-center text-stripe-purple hover:bg-stripe-bg"
+        >
+          查看更多
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function StrategyPanel() {
+  return (
+    <div className="grid grid-cols-3 gap-6 mb-6">
+      {strategies.map((strategy) => (
+        <StrategyCard key={strategy.id} strategy={strategy} />
+      ))}
     </div>
   );
 }

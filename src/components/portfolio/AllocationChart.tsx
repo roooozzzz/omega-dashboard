@@ -13,21 +13,21 @@ interface AllocationData {
 export function AllocationChart() {
   const allocations: AllocationData[] = [
     {
-      label: "Long Term (THE CORE)",
+      label: "长线 (THE CORE)",
       target: 50,
       actual: 48.2,
       icon: <Building2 className="w-4 h-4" />,
       color: "#0A2540",
     },
     {
-      label: "Mid Term (THE FLOW)",
+      label: "中线 (THE FLOW)",
       target: 30,
       actual: 32.1,
       icon: <TrendingUp className="w-4 h-4" />,
       color: "#635BFF",
     },
     {
-      label: "Short Term (THE SWING)",
+      label: "短线 (THE SWING)",
       target: 20,
       actual: 19.7,
       icon: <Zap className="w-4 h-4" />,
@@ -37,11 +37,11 @@ export function AllocationChart() {
 
   return (
     <div className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)] mb-6">
-      <h3 className="font-semibold text-stripe-ink mb-4">Strategy Allocation</h3>
+      <h3 className="font-semibold text-stripe-ink mb-4">策略配置</h3>
 
       {/* Visual Bar */}
       <div className="h-4 rounded-full overflow-hidden flex mb-6">
-        {allocations.map((alloc, i) => (
+        {allocations.map((alloc) => (
           <div
             key={alloc.label}
             className="h-full"
@@ -67,10 +67,10 @@ export function AllocationChart() {
               </p>
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-stripe-ink-lighter">
-                  Target: {alloc.target}%
+                  目标: {alloc.target}%
                 </span>
                 <span className="text-stripe-ink">
-                  Actual: {alloc.actual.toFixed(1)}%
+                  实际: {alloc.actual.toFixed(1)}%
                 </span>
                 {Math.abs(alloc.actual - alloc.target) > 2 && (
                   <span className="text-stripe-warning text-xs">

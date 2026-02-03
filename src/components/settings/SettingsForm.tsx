@@ -60,7 +60,7 @@ interface SelectRowProps {
   label: string;
   description?: string;
   value: string;
-  options: string[];
+  options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }
 
@@ -79,8 +79,8 @@ function SelectRow({ label, description, value, options, onChange }: SelectRowPr
         className="px-3 py-1.5 text-sm border border-stripe-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
       >
         {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
           </option>
         ))}
       </select>
@@ -94,6 +94,7 @@ interface InputRowProps {
   value: string;
   type?: string;
   placeholder?: string;
+  suffix?: string;
   onChange: (value: string) => void;
 }
 
@@ -103,6 +104,7 @@ function InputRow({
   value,
   type = "text",
   placeholder,
+  suffix,
   onChange,
 }: InputRowProps) {
   return (
@@ -113,13 +115,18 @@ function InputRow({
           <p className="text-xs text-stripe-ink-lighter mt-0.5">{description}</p>
         )}
       </div>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-48 px-3 py-1.5 text-sm border border-stripe-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
-      />
+      <div className="flex items-center gap-2">
+        <input
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-32 px-3 py-1.5 text-sm border border-stripe-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
+        />
+        {suffix && (
+          <span className="text-sm text-stripe-ink-lighter">{suffix}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -133,8 +140,8 @@ export function SettingsForm() {
 
   // Trading
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState("5 min");
-  const [riskLevel, setRiskLevel] = useState("Moderate");
+  const [refreshInterval, setRefreshInterval] = useState("5");
+  const [riskLevel, setRiskLevel] = useState("moderate");
   const [maxPositionSize, setMaxPositionSize] = useState("10");
 
   // Strategy
@@ -145,34 +152,36 @@ export function SettingsForm() {
   // API
   const [apiKey, setApiKey] = useState("");
 
+  const totalAllocation = Number(longAllocation) + Number(midAllocation) + Number(shortAllocation);
+
   return (
     <>
       {/* Notifications */}
       <SettingsSection
-        title="Notifications"
-        description="Configure how you receive alerts and updates"
+        title="通知设置"
+        description="配置接收提醒和更新的方式"
       >
         <ToggleRow
-          label="Email Alerts"
-          description="Receive trading signals via email"
+          label="邮件提醒"
+          description="通过邮件接收交易信号"
           enabled={emailAlerts}
           onChange={setEmailAlerts}
         />
         <ToggleRow
-          label="Push Notifications"
-          description="Browser push notifications for urgent signals"
+          label="推送通知"
+          description="浏览器推送紧急信号通知"
           enabled={pushNotifications}
           onChange={setPushNotifications}
         />
         <ToggleRow
-          label="Signal Alerts"
-          description="Real-time alerts when new signals trigger"
+          label="信号提醒"
+          description="新信号触发时实时提醒"
           enabled={signalAlerts}
           onChange={setSignalAlerts}
         />
         <ToggleRow
-          label="Daily Digest"
-          description="Summary email at market close"
+          label="每日摘要"
+          description="收盘后发送当日汇总邮件"
           enabled={dailyDigest}
           onChange={setDailyDigest}
         />
@@ -180,85 +189,98 @@ export function SettingsForm() {
 
       {/* Trading Preferences */}
       <SettingsSection
-        title="Trading Preferences"
-        description="Configure trading behavior and risk parameters"
+        title="交易偏好"
+        description="配置交易行为和风险参数"
       >
         <ToggleRow
-          label="Auto Refresh"
-          description="Automatically refresh market data"
+          label="自动刷新"
+          description="自动刷新市场数据"
           enabled={autoRefresh}
           onChange={setAutoRefresh}
         />
         <SelectRow
-          label="Refresh Interval"
+          label="刷新间隔"
           value={refreshInterval}
-          options={["1 min", "5 min", "15 min", "30 min"]}
+          options={[
+            { value: "1", label: "1 分钟" },
+            { value: "5", label: "5 分钟" },
+            { value: "15", label: "15 分钟" },
+            { value: "30", label: "30 分钟" },
+          ]}
           onChange={setRefreshInterval}
         />
         <SelectRow
-          label="Risk Level"
-          description="Overall portfolio risk tolerance"
+          label="风险等级"
+          description="整体组合风险承受度"
           value={riskLevel}
-          options={["Conservative", "Moderate", "Aggressive"]}
+          options={[
+            { value: "conservative", label: "保守" },
+            { value: "moderate", label: "稳健" },
+            { value: "aggressive", label: "激进" },
+          ]}
           onChange={setRiskLevel}
         />
         <InputRow
-          label="Max Position Size"
-          description="Maximum % of portfolio per position"
+          label="单仓上限"
+          description="每个持仓占组合最大比例"
           value={maxPositionSize}
           type="number"
           placeholder="10"
+          suffix="%"
           onChange={setMaxPositionSize}
         />
       </SettingsSection>
 
       {/* Strategy Allocation */}
       <SettingsSection
-        title="Strategy Allocation"
-        description="Target allocation percentages (must total 100%)"
+        title="策略配置"
+        description="目标仓位百分比（总和须为 100%）"
       >
         <InputRow
-          label="Long Term (THE CORE)"
-          description="Quality-focused fundamental positions"
+          label="长线 (THE CORE)"
+          description="基本面选质，护城河策略"
           value={longAllocation}
           type="number"
+          suffix="%"
           onChange={setLongAllocation}
         />
         <InputRow
-          label="Mid Term (THE FLOW)"
-          description="Momentum-based swing trades"
+          label="中线 (THE FLOW)"
+          description="动量跟踪，借势策略"
           value={midAllocation}
           type="number"
+          suffix="%"
           onChange={setMidAllocation}
         />
         <InputRow
-          label="Short Term (THE SWING)"
-          description="Mean-reversion tactical trades"
+          label="短线 (THE SWING)"
+          description="均值回归，情绪捕捉策略"
           value={shortAllocation}
           type="number"
+          suffix="%"
           onChange={setShortAllocation}
         />
         <div className="pt-3 flex items-center justify-between">
           <span className="text-sm text-stripe-ink-lighter">
-            Total: {Number(longAllocation) + Number(midAllocation) + Number(shortAllocation)}%
+            总计: {totalAllocation}%
           </span>
-          {Number(longAllocation) + Number(midAllocation) + Number(shortAllocation) !== 100 && (
-            <span className="text-sm text-stripe-danger">Must equal 100%</span>
+          {totalAllocation !== 100 && (
+            <span className="text-sm text-stripe-danger">须等于 100%</span>
           )}
         </div>
       </SettingsSection>
 
       {/* API Configuration */}
       <SettingsSection
-        title="API Configuration"
-        description="Connect external services and data providers"
+        title="API 配置"
+        description="连接外部服务和数据提供商"
       >
         <InputRow
-          label="API Key"
-          description="Your OMEGA API key for external integrations"
+          label="API 密钥"
+          description="用于外部集成的 OMEGA API 密钥"
           value={apiKey}
           type="password"
-          placeholder="Enter API key..."
+          placeholder="输入 API 密钥..."
           onChange={setApiKey}
         />
         <div className="pt-3">
@@ -266,7 +288,7 @@ export function SettingsForm() {
             variant="outline"
             className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg"
           >
-            Generate New Key
+            生成新密钥
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -275,7 +297,7 @@ export function SettingsForm() {
       {/* Save Button */}
       <div className="flex justify-end">
         <Button className="bg-stripe-purple text-white hover:bg-stripe-purple-dark">
-          Save Changes
+          保存设置
         </Button>
       </div>
     </>

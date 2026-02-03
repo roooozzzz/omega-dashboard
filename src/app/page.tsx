@@ -4,27 +4,23 @@ import { MarketStatusBar } from "@/components/dashboard/MarketStatusBar";
 import { StrategyPanel } from "@/components/dashboard/StrategyPanel";
 import { MoatScannerTable } from "@/components/dashboard/MoatScannerTable";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   return (
     <div className="min-h-screen bg-stripe-bg">
       <Sidebar />
       <main className="ml-60 min-h-screen">
         <Header
-          title="Dashboard"
-          description="Monitor your quantitative trading system"
+          title="仪表盘"
+          description="三层量化交易系统 — 人机协作模式"
         />
         <div className="p-8">
-          {/* Market Status Bar */}
+          {/* 市场状态 */}
           <MarketStatusBar />
 
-          {/* Three Strategy Panels */}
-          <div className="grid grid-cols-3 gap-6 mb-8">
-            <StrategyPanel type="long" />
-            <StrategyPanel type="mid" />
-            <StrategyPanel type="short" />
-          </div>
+          {/* 三层策略面板 */}
+          <StrategyPanel />
 
-          {/* Moat Scanner Table */}
+          {/* 护城河审批队列 */}
           <MoatScannerTable />
         </div>
       </main>

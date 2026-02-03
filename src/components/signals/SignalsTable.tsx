@@ -1,272 +1,262 @@
 "use client";
 
-import { useState } from "react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Zap,
-  Building2,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-} from "lucide-react";
+import { Building2, TrendingUp, Zap } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { LucideIcon } from "lucide-react";
 
-type SignalType = "BUY" | "SELL" | "WATCH" | "ALERT";
+type SignalType = "买入" | "卖出" | "观望" | "预警";
 type StrategyType = "long" | "mid" | "short";
 
 interface Signal {
   id: string;
   ticker: string;
   name: string;
-  type: SignalType;
+  signal: SignalType;
   strategy: StrategyType;
-  trigger: string;
+  indicator: string;
   price: number;
-  targetPrice?: number;
-  stopLoss?: number;
-  timestamp: string;
-  status: "Active" | "Executed" | "Expired" | "Cancelled";
-  notes?: string;
+  change: number;
+  triggeredAt: string;
+  reason: string;
 }
 
-const signalTypeConfig: Record<
-  SignalType,
-  { icon: LucideIcon; color: string; bg: string }
-> = {
-  BUY: {
-    icon: TrendingUp,
-    color: "text-stripe-success",
-    bg: "bg-stripe-success-light",
-  },
-  SELL: {
-    icon: TrendingDown,
-    color: "text-stripe-danger",
-    bg: "bg-stripe-danger-light",
-  },
-  WATCH: {
-    icon: Clock,
-    color: "text-stripe-warning",
-    bg: "bg-stripe-warning-light",
-  },
-  ALERT: {
-    icon: AlertCircle,
-    color: "text-stripe-info",
-    bg: "bg-stripe-info-light",
-  },
+const signalConfig: Record<SignalType, { variant: "success" | "danger" | "neutral" | "warning" }> = {
+  "买入": { variant: "success" },
+  "卖出": { variant: "danger" },
+  "观望": { variant: "neutral" },
+  "预警": { variant: "warning" },
 };
 
 const strategyConfig: Record<
   StrategyType,
-  { label: string; icon: LucideIcon; color: string }
+  { label: string; icon: LucideIcon; color: string; bg: string }
 > = {
-  long: { label: "Long Term", icon: Building2, color: "text-stripe-ink" },
-  mid: { label: "Mid Term", icon: TrendingUp, color: "text-stripe-purple" },
-  short: { label: "Short Term", icon: Zap, color: "text-stripe-warning" },
+  long: {
+    label: "长线",
+    icon: Building2,
+    color: "text-stripe-ink",
+    bg: "bg-stripe-bg",
+  },
+  mid: {
+    label: "中线",
+    icon: TrendingUp,
+    color: "text-stripe-purple",
+    bg: "bg-indigo-50",
+  },
+  short: {
+    label: "短线",
+    icon: Zap,
+    color: "text-stripe-warning",
+    bg: "bg-stripe-warning-light",
+  },
 };
 
-const statusConfig = {
-  Active: { variant: "success" as const, icon: CheckCircle },
-  Executed: { variant: "info" as const, icon: CheckCircle },
-  Expired: { variant: "neutral" as const, icon: Clock },
-  Cancelled: { variant: "danger" as const, icon: AlertCircle },
-};
-
-interface SignalRowProps {
-  signal: Signal;
-}
-
-function SignalRow({ signal }: SignalRowProps) {
-  const typeConfig = signalTypeConfig[signal.type];
-  const TypeIcon = typeConfig.icon;
-  const stratConfig = strategyConfig[signal.strategy];
-  const StratIcon = stratConfig.icon;
-
-  return (
-    <tr className="hover:bg-[#FAFBFC] transition-colors duration-150 border-b border-stripe-border">
-      {/* Signal Type */}
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-8 h-8 rounded-full ${typeConfig.bg} flex items-center justify-center`}
-          >
-            <TypeIcon className={`w-4 h-4 ${typeConfig.color}`} />
-          </div>
-          <span className={`font-semibold text-sm ${typeConfig.color}`}>
-            {signal.type}
-          </span>
-        </div>
-      </td>
-
-      {/* Stock */}
-      <td className="px-5 py-4">
-        <p className="font-medium text-sm text-stripe-ink">{signal.ticker}</p>
-        <p className="text-xs text-stripe-ink-lighter">{signal.name}</p>
-      </td>
-
-      {/* Strategy */}
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-2">
-          <StratIcon className={`w-4 h-4 ${stratConfig.color}`} />
-          <span className="text-sm text-stripe-ink-light">
-            {stratConfig.label}
-          </span>
-        </div>
-      </td>
-
-      {/* Trigger */}
-      <td className="px-5 py-4">
-        <p className="text-sm text-stripe-ink">{signal.trigger}</p>
-      </td>
-
-      {/* Price */}
-      <td className="px-5 py-4">
-        <p className="text-sm font-medium text-stripe-ink">
-          ${signal.price.toFixed(2)}
-        </p>
-        {signal.targetPrice && (
-          <p className="text-xs text-stripe-success">
-            Target: ${signal.targetPrice.toFixed(2)}
-          </p>
-        )}
-      </td>
-
-      {/* Time */}
-      <td className="px-5 py-4">
-        <p className="text-sm text-stripe-ink-lighter">{signal.timestamp}</p>
-      </td>
-
-      {/* Status */}
-      <td className="px-5 py-4">
-        <StatusBadge variant={statusConfig[signal.status].variant}>
-          {signal.status}
-        </StatusBadge>
-      </td>
-    </tr>
-  );
-}
-
-// Demo data
-export const demoSignals: Signal[] = [
+const demoSignals: Signal[] = [
   {
     id: "1",
     ticker: "MSFT",
-    name: "Microsoft Corp",
-    type: "BUY",
+    name: "微软",
+    signal: "买入",
     strategy: "long",
-    trigger: "Moat Score > 25, ROE expansion",
+    indicator: "护城河 26/35",
     price: 412.35,
-    targetPrice: 480.0,
-    stopLoss: 380.0,
-    timestamp: "Today 14:32",
-    status: "Active",
+    change: 2.15,
+    triggeredAt: "2026-02-03 14:32",
+    reason: "护城河评分通过审核，符合长线买入标准",
   },
   {
     id: "2",
     ticker: "SMCI",
-    name: "Super Micro Computer",
-    type: "BUY",
+    name: "超微电脑",
+    signal: "买入",
     strategy: "mid",
-    trigger: "Pocket Pivot on 2.3x volume",
+    indicator: "RS 94",
     price: 892.45,
-    targetPrice: 1050.0,
-    timestamp: "Today 10:15",
-    status: "Executed",
+    change: 5.23,
+    triggeredAt: "2026-02-03 13:15",
+    reason: "RS 评级突破 90，动量强劲",
   },
   {
     id: "3",
     ticker: "GOOGL",
-    name: "Alphabet Inc",
-    type: "BUY",
+    name: "谷歌",
+    signal: "预警",
     strategy: "short",
-    trigger: "RSI(2) < 20, oversold bounce",
+    indicator: "RSI 24",
     price: 141.22,
-    targetPrice: 148.0,
-    timestamp: "Today 09:45",
-    status: "Active",
+    change: -3.45,
+    triggeredAt: "2026-02-03 11:45",
+    reason: "RSI 进入超卖区间，关注反弹机会",
   },
   {
     id: "4",
-    ticker: "ARM",
-    name: "Arm Holdings",
-    type: "WATCH",
-    strategy: "mid",
-    trigger: "VCP forming, wait for breakout",
-    price: 156.78,
-    timestamp: "Yesterday 16:00",
-    status: "Active",
+    ticker: "NVDA",
+    name: "英伟达",
+    signal: "观望",
+    strategy: "long",
+    indicator: "护城河 24/35",
+    price: 878.45,
+    change: 1.82,
+    triggeredAt: "2026-02-03 10:30",
+    reason: "估值偏高，等待更好入场点",
   },
   {
     id: "5",
-    ticker: "NVDA",
-    name: "NVIDIA Corp",
-    type: "ALERT",
-    strategy: "long",
-    trigger: "Approaching resistance at $900",
-    price: 878.35,
-    timestamp: "Yesterday 14:22",
-    status: "Active",
+    ticker: "AAPL",
+    name: "苹果",
+    signal: "卖出",
+    strategy: "mid",
+    indicator: "RS 65",
+    price: 185.92,
+    change: -1.24,
+    triggeredAt: "2026-02-03 09:45",
+    reason: "RS 评级跌破 70，动量减弱",
   },
   {
     id: "6",
     ticker: "TSLA",
-    name: "Tesla Inc",
-    type: "SELL",
+    name: "特斯拉",
+    signal: "观望",
     strategy: "short",
-    trigger: "RSI(2) > 95, overbought",
+    indicator: "RSI 45",
     price: 245.67,
-    timestamp: "Feb 1, 11:30",
-    status: "Executed",
-  },
-  {
-    id: "7",
-    ticker: "META",
-    name: "Meta Platforms",
-    type: "WATCH",
-    strategy: "short",
-    trigger: "RSI approaching oversold",
-    price: 485.32,
-    timestamp: "Feb 1, 09:15",
-    status: "Expired",
+    change: 0.85,
+    triggeredAt: "2026-02-03 09:15",
+    reason: "RSI 中性区间，无明确方向",
   },
 ];
 
 export function SignalsTable() {
   return (
     <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)]">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-stripe-border bg-stripe-bg">
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Signal
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Stock
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Strategy
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Trigger
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Price
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Time
-            </th>
-            <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Status
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {demoSignals.map((signal) => (
-            <SignalRow key={signal.id} signal={signal} />
-          ))}
-        </tbody>
-      </table>
+      <div className="p-5 border-b border-stripe-border">
+        <h2 className="font-semibold text-stripe-ink">信号历史</h2>
+        <p className="text-sm text-stripe-ink-lighter mt-0.5">
+          最近 24 小时内触发的交易信号
+        </p>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent border-b border-stripe-border">
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              股票
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              信号
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              策略
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              指标
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              价格
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              触发时间
+            </TableHead>
+            <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+              原因
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {demoSignals.map((signal) => {
+            const StratIcon = strategyConfig[signal.strategy].icon;
+            return (
+              <TableRow
+                key={signal.id}
+                className="hover:bg-stripe-bg border-b border-stripe-border-light"
+              >
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center">
+                      <span className="text-sm font-medium text-stripe-ink">
+                        {signal.ticker[0]}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-stripe-ink">
+                        {signal.ticker}
+                      </p>
+                      <p className="text-xs text-stripe-ink-lighter">
+                        {signal.name}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge variant={signalConfig[signal.signal].variant}>
+                    {signal.signal}
+                  </StatusBadge>
+                </TableCell>
+                <TableCell>
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded ${
+                      strategyConfig[signal.strategy].bg
+                    }`}
+                  >
+                    <StratIcon
+                      className={`w-3.5 h-3.5 ${
+                        strategyConfig[signal.strategy].color
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-medium ${
+                        strategyConfig[signal.strategy].color
+                      }`}
+                    >
+                      {strategyConfig[signal.strategy].label}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-stripe-ink">
+                    {signal.indicator}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <p className="text-sm font-medium text-stripe-ink">
+                      ${signal.price.toFixed(2)}
+                    </p>
+                    <p
+                      className={`text-xs ${
+                        signal.change >= 0
+                          ? "text-stripe-success"
+                          : "text-stripe-danger"
+                      }`}
+                    >
+                      {signal.change >= 0 ? "+" : ""}
+                      {signal.change.toFixed(2)}%
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-stripe-ink-lighter">
+                    {signal.triggeredAt}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <p className="text-sm text-stripe-ink-lighter max-w-xs truncate">
+                    {signal.reason}
+                  </p>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -10,17 +10,17 @@ export default function PortfolioPage() {
       <Sidebar />
       <main className="ml-60 min-h-screen">
         <Header
-          title="Portfolio"
-          description="Position management and allocation tracking"
+          title="持仓管理"
+          description="组合持仓与策略配置追踪"
         />
         <div className="p-8">
-          {/* Stats Overview */}
+          {/* 统计概览 */}
           <PortfolioStats />
 
-          {/* Allocation Chart */}
+          {/* 策略配置图 */}
           <AllocationChart />
 
-          {/* Positions Table */}
+          {/* 持仓表格 */}
           <PositionsTable />
         </div>
       </main>

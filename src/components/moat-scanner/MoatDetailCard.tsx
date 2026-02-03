@@ -13,17 +13,17 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import type { MoatProposal } from "@/lib/moat-data";
 
 const statusConfig = {
-  Pending: {
+  "待审核": {
     icon: Clock,
     variant: "warning" as const,
     color: "text-stripe-warning",
   },
-  Verified: {
+  "已通过": {
     icon: CheckCircle,
     variant: "success" as const,
     color: "text-stripe-success",
   },
-  Rejected: {
+  "已拒绝": {
     icon: XCircle,
     variant: "danger" as const,
     color: "text-stripe-danger",
@@ -31,9 +31,9 @@ const statusConfig = {
 };
 
 const confidenceColor = {
-  High: "text-stripe-success",
-  Medium: "text-stripe-warning",
-  Low: "text-stripe-danger",
+  "高": "text-stripe-success",
+  "中": "text-stripe-warning",
+  "低": "text-stripe-danger",
 };
 
 interface MoatDetailCardProps {
@@ -81,7 +81,7 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
                 /{proposal.maxScore}
               </span>
             </p>
-            <p className="text-xs text-stripe-ink-lighter">AI Score</p>
+            <p className="text-xs text-stripe-ink-lighter">AI 评分</p>
           </div>
 
           {/* Confidence */}
@@ -93,7 +93,7 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
             >
               {proposal.confidence}
             </p>
-            <p className="text-xs text-stripe-ink-lighter">Confidence</p>
+            <p className="text-xs text-stripe-ink-lighter">置信度</p>
           </div>
 
           {/* Status */}
@@ -159,7 +159,7 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
           <div className="px-5 pb-5">
             <div className="p-4 bg-stripe-info-light rounded-lg">
               <h4 className="text-sm font-medium text-stripe-info-text mb-2">
-                AI Analysis Summary
+                AI 分析摘要
               </h4>
               <p className="text-sm text-stripe-ink-light">
                 {proposal.aiSummary}
@@ -170,7 +170,7 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
           {/* Actions */}
           <div className="px-5 pb-5 flex items-center justify-between">
             <p className="text-xs text-stripe-ink-lighter">
-              Analyzed: {proposal.analyzedAt}
+              分析时间: {proposal.analyzedAt}
             </p>
             <div className="flex items-center gap-3">
               <Button
@@ -178,11 +178,11 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
                 className="bg-white border-stripe-danger text-stripe-danger hover:bg-stripe-danger-light"
               >
                 <XCircle className="w-4 h-4" />
-                Reject
+                拒绝
               </Button>
               <Button className="bg-stripe-success text-white hover:bg-stripe-success/90">
                 <CheckCircle className="w-4 h-4" />
-                Verify
+                确认
               </Button>
             </div>
           </div>

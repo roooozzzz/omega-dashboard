@@ -28,19 +28,19 @@ const strategyConfig: Record<
   { label: string; icon: LucideIcon; color: string; bg: string }
 > = {
   long: {
-    label: "Long",
+    label: "长线",
     icon: Building2,
     color: "text-stripe-ink",
     bg: "bg-stripe-bg",
   },
   mid: {
-    label: "Mid",
+    label: "中线",
     icon: TrendingUp,
     color: "text-stripe-purple",
     bg: "bg-indigo-50",
   },
   short: {
-    label: "Short",
+    label: "短线",
     icon: Zap,
     color: "text-stripe-warning",
     bg: "bg-stripe-warning-light",
@@ -146,7 +146,7 @@ function PositionRow({ position }: { position: Position }) {
       {/* Signal Indicator */}
       <td className="px-5 py-4">
         {position.strategy === "long" && position.moatScore && (
-          <StatusBadge variant="neutral">Moat: {position.moatScore}</StatusBadge>
+          <StatusBadge variant="neutral">护城河: {position.moatScore}</StatusBadge>
         )}
         {position.strategy === "mid" && position.rsRating && (
           <StatusBadge variant="neutral">RS: {position.rsRating}</StatusBadge>
@@ -174,7 +174,7 @@ export const demoPositions: Position[] = [
   {
     id: "1",
     ticker: "NVDA",
-    name: "NVIDIA Corp",
+    name: "英伟达",
     strategy: "long",
     shares: 150,
     avgCost: 485.32,
@@ -188,7 +188,7 @@ export const demoPositions: Position[] = [
   {
     id: "2",
     ticker: "MSFT",
-    name: "Microsoft Corp",
+    name: "微软",
     strategy: "long",
     shares: 200,
     avgCost: 332.15,
@@ -202,7 +202,7 @@ export const demoPositions: Position[] = [
   {
     id: "3",
     ticker: "AAPL",
-    name: "Apple Inc",
+    name: "苹果",
     strategy: "long",
     shares: 300,
     avgCost: 165.42,
@@ -216,7 +216,7 @@ export const demoPositions: Position[] = [
   {
     id: "4",
     ticker: "SMCI",
-    name: "Super Micro Computer",
+    name: "超微电脑",
     strategy: "mid",
     shares: 80,
     avgCost: 756.45,
@@ -258,7 +258,7 @@ export const demoPositions: Position[] = [
   {
     id: "7",
     ticker: "GOOGL",
-    name: "Alphabet Inc",
+    name: "谷歌",
     strategy: "short",
     shares: 400,
     avgCost: 138.45,
@@ -272,7 +272,7 @@ export const demoPositions: Position[] = [
   {
     id: "8",
     ticker: "PLTR",
-    name: "Palantir Technologies",
+    name: "Palantir",
     strategy: "mid",
     shares: 500,
     avgCost: 22.45,
@@ -291,9 +291,9 @@ export function PositionsTable() {
       {/* Header */}
       <div className="p-5 border-b border-stripe-border flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-stripe-ink">Positions</h2>
+          <h2 className="font-semibold text-stripe-ink">持仓明细</h2>
           <p className="text-sm text-stripe-ink-lighter mt-0.5">
-            {demoPositions.length} active positions across 3 strategies
+            {demoPositions.length} 个持仓，覆盖 3 层策略
           </p>
         </div>
       </div>
@@ -303,31 +303,31 @@ export function PositionsTable() {
         <thead>
           <tr className="border-b border-stripe-border bg-stripe-bg">
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Stock
+              股票
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Strategy
+              策略
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Shares
+              股数
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Avg Cost
+              成本价
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Price
+              现价
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Value
+              市值
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Gain/Loss
+              盈亏
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Weight
+              仓位
             </th>
             <th className="text-left px-5 py-3 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-              Indicator
+              指标
             </th>
           </tr>
         </thead>
