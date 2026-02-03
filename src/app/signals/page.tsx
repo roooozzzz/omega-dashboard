@@ -1,5 +1,8 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { SignalsStats } from "@/components/signals/SignalsStats";
+import { SignalsFilters } from "@/components/signals/SignalsFilters";
+import { SignalsTable } from "@/components/signals/SignalsTable";
 
 export default function SignalsPage() {
   return (
@@ -8,12 +11,17 @@ export default function SignalsPage() {
       <main className="ml-60 min-h-screen">
         <Header
           title="Signals"
-          description="Trading signal history and alerts"
+          description="Trading signals from all three strategies"
         />
         <div className="p-8">
-          <div className="bg-white rounded-lg border border-stripe-border p-12 text-center">
-            <p className="text-stripe-ink-lighter">Signals page — coming soon</p>
-          </div>
+          {/* Stats Overview */}
+          <SignalsStats />
+
+          {/* Filters */}
+          <SignalsFilters />
+
+          {/* Signals Table */}
+          <SignalsTable />
         </div>
       </main>
     </div>

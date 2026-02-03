@@ -1,5 +1,11 @@
+"use client";
+
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { MoatStats } from "@/components/moat-scanner/MoatStats";
+import { MoatFilters } from "@/components/moat-scanner/MoatFilters";
+import { MoatDetailCard } from "@/components/moat-scanner/MoatDetailCard";
+import { demoProposals } from "@/lib/moat-data";
 
 export default function MoatScannerPage() {
   return (
@@ -8,11 +14,20 @@ export default function MoatScannerPage() {
       <main className="ml-60 min-h-screen">
         <Header
           title="Moat Scanner"
-          description="AI-powered moat analysis and approval"
+          description="AI-powered moat analysis and approval workflow"
         />
         <div className="p-8">
-          <div className="bg-white rounded-lg border border-stripe-border p-12 text-center">
-            <p className="text-stripe-ink-lighter">Moat Scanner full page — coming soon</p>
+          {/* Stats Overview */}
+          <MoatStats />
+
+          {/* Filters */}
+          <MoatFilters />
+
+          {/* Proposals List */}
+          <div className="space-y-4">
+            {demoProposals.map((proposal) => (
+              <MoatDetailCard key={proposal.id} proposal={proposal} />
+            ))}
           </div>
         </div>
       </main>

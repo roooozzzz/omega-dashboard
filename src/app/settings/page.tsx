@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { SettingsForm } from "@/components/settings/SettingsForm";
 
 export default function SettingsPage() {
   return (
@@ -8,12 +9,10 @@ export default function SettingsPage() {
       <main className="ml-60 min-h-screen">
         <Header
           title="Settings"
-          description="System configuration and preferences"
+          description="Configure your trading system preferences"
         />
-        <div className="p-8">
-          <div className="bg-white rounded-lg border border-stripe-border p-12 text-center">
-            <p className="text-stripe-ink-lighter">Settings page — coming soon</p>
-          </div>
+        <div className="p-8 max-w-4xl">
+          <SettingsForm />
         </div>
       </main>
     </div>
