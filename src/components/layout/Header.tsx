@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { RefreshCw, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
 
 interface HeaderProps {
   title: string;
@@ -70,6 +71,9 @@ export function Header({ title, description }: HeaderProps) {
           )}
         </div>
         <div className="flex items-center gap-3">
+          {/* Global Search */}
+          <GlobalSearch />
+
           <span className="text-sm text-stripe-ink-lighter">
             最后更新: {new Date().toLocaleTimeString("zh-CN", { hour12: false })}
           </span>
