@@ -4,6 +4,8 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MainContent } from "@/components/layout/MainContent";
+import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStockData } from "@/hooks/useMarketData";
@@ -38,10 +40,11 @@ export default function StockDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-stripe-bg">
+      <MobileMenuButton />
       <Sidebar />
-      <main className="ml-60 min-h-screen">
+      <MainContent>
         {/* Header */}
-        <header className="sticky top-0 bg-white border-b border-stripe-border px-8 py-4 z-10">
+        <header className="sticky top-0 bg-white border-b border-stripe-border px-4 md:px-6 lg:px-8 py-4 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
@@ -64,12 +67,12 @@ export default function StockDetailPage({ params }: PageProps) {
               className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              刷新
+              <span className="hidden sm:inline ml-2">刷新</span>
             </Button>
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 md:p-6 lg:p-8">
           {error ? (
             <div className="bg-stripe-danger-light p-4 rounded-lg text-stripe-danger">
               {error}
@@ -77,10 +80,10 @@ export default function StockDetailPage({ params }: PageProps) {
           ) : (
             <>
               {/* 价格卡片 */}
-              <div className="bg-white rounded-lg border border-stripe-border p-6 mb-6 shadow-[var(--shadow-omega-sm)]">
-                <div className="flex items-center gap-8">
+              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 mb-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
                   <div>
-                    <p className="text-4xl font-bold text-stripe-ink">
+                    <p className="text-3xl md:text-4xl font-bold text-stripe-ink">
                       ${formatNumber(data?.price)}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
@@ -104,22 +107,22 @@ export default function StockDetailPage({ params }: PageProps) {
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 grid grid-cols-4 gap-6">
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div>
                       <p className="text-sm text-stripe-ink-lighter">市值</p>
-                      <p className="text-lg font-semibold text-stripe-ink">
+                      <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {formatMarketCap(data?.marketCap)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-stripe-ink-lighter">市盈率</p>
-                      <p className="text-lg font-semibold text-stripe-ink">
+                      <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {formatNumber(data?.pe)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-stripe-ink-lighter">成交量</p>
-                      <p className="text-lg font-semibold text-stripe-ink">
+                      <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {data?.volume ? (data.volume / 1e6).toFixed(2) + "M" : "N/A"}
                       </p>
                     </div>
@@ -136,13 +139,13 @@ export default function StockDetailPage({ params }: PageProps) {
               </div>
 
               {/* 技术指标 */}
-              <div className="grid grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
                 {/* RS Rating */}
-                <div className="bg-white rounded-lg border border-stripe-border p-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
                   <h3 className="font-semibold text-stripe-ink mb-4">中线指标 · RS 评级</h3>
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
+                      className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-xl md:text-2xl font-bold ${
                         (data?.rsRating || 0) >= 85
                           ? "bg-stripe-success-light text-stripe-success"
                           : (data?.rsRating || 0) >= 70
@@ -178,11 +181,11 @@ export default function StockDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* RSI */}
-                <div className="bg-white rounded-lg border border-stripe-border p-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
                   <h3 className="font-semibold text-stripe-ink mb-4">短线指标 · RSI</h3>
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
+                      className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-xl md:text-2xl font-bold ${
                         data?.rsiSignal === "oversold"
                           ? "bg-stripe-danger-light text-stripe-danger"
                           : data?.rsiSignal === "overbought"
@@ -220,7 +223,7 @@ export default function StockDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* 布林带 */}
-                <div className="bg-white rounded-lg border border-stripe-border p-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
                   <h3 className="font-semibold text-stripe-ink mb-4">短线指标 · 布林带</h3>
                   {data?.bollinger ? (
                     <div className="space-y-3">
@@ -267,9 +270,9 @@ export default function StockDetailPage({ params }: PageProps) {
               </div>
 
               {/* 策略建议 */}
-              <div className="bg-white rounded-lg border border-stripe-border p-6 shadow-[var(--shadow-omega-sm)]">
+              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
                 <h3 className="font-semibold text-stripe-ink mb-4">OMEGA 策略建议</h3>
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <div className="p-4 bg-stripe-bg rounded-lg">
                     <p className="text-sm font-medium text-stripe-ink mb-2">长线 · THE CORE</p>
                     <p className="text-xs text-stripe-ink-lighter">
@@ -318,7 +321,7 @@ export default function StockDetailPage({ params }: PageProps) {
             </>
           )}
         </div>
-      </main>
+      </MainContent>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, Bell } from "lucide-react";
+import { RefreshCw, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 interface HeaderProps {
   title: string;
@@ -49,6 +50,7 @@ const demoNotifications: Notification[] = [
 export function Header({ title, description }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState(demoNotifications);
+  const { toggleOpen, isMobile } = useSidebar();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
@@ -62,19 +64,33 @@ export function Header({ title, description }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 bg-white border-b border-stripe-border px-8 py-4 z-10">
+    <header className="sticky top-0 bg-white border-b border-stripe-border px-4 md:px-8 py-4 z-10">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-stripe-ink">{title}</h1>
-          {description && (
-            <p className="text-sm text-stripe-ink-lighter">{description}</p>
-          )}
-        </div>
         <div className="flex items-center gap-3">
-          {/* Global Search */}
-          <GlobalSearch />
+          {/* 移动端汉堡菜单 - 只在 Header 内显示，MobileMenuButton 是备用 */}
+          {isMobile && (
+            <button
+              onClick={toggleOpen}
+              className="p-2 hover:bg-stripe-bg rounded-md transition-colors md:hidden"
+              aria-label="打开菜单"
+            >
+              <Menu className="w-5 h-5 text-stripe-ink" />
+            </button>
+          )}
+          <div>
+            <h1 className="text-lg font-semibold text-stripe-ink">{title}</h1>
+            {description && (
+              <p className="text-sm text-stripe-ink-lighter hidden sm:block">{description}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Global Search - 移动端隐藏 */}
+          <div className="hidden sm:block">
+            <GlobalSearch />
+          </div>
 
-          <span className="text-sm text-stripe-ink-lighter">
+          <span className="text-sm text-stripe-ink-lighter hidden lg:block">
             最后更新: {new Date().toLocaleTimeString("zh-CN", { hour12: false })}
           </span>
 
@@ -146,10 +162,10 @@ export function Header({ title, description }: HeaderProps) {
 
           <Button
             variant="outline"
-            className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg"
+            className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg hidden sm:flex"
           >
             <RefreshCw className="w-4 h-4 text-stripe-ink-light" />
-            刷新
+            <span className="hidden md:inline ml-2">刷新</span>
           </Button>
         </div>
       </div>

@@ -75,7 +75,7 @@ export function PriceChart({
             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [`$${value.toFixed(2)}`, "价格"]}
+          formatter={(value) => value != null ? [`$${Number(value).toFixed(2)}`, "价格"] : ["--", "价格"]}
           labelFormatter={(label) => `日期: ${label}`}
         />
         <ReferenceLine
@@ -148,7 +148,7 @@ export function RSIChart({ data, height = 120 }: RSIChartProps) {
             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
             fontSize: "12px",
           }}
-          formatter={(value: number) => [`${value.toFixed(1)}`, "RSI"]}
+          formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(1)}`, "RSI"]}
         />
         {/* 超买超卖线 */}
         <ReferenceLine y={70} stroke="#DC3545" strokeDasharray="5 5" />

@@ -1,6 +1,8 @@
 "use client";
 
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MainContent } from "@/components/layout/MainContent";
+import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Header } from "@/components/layout/Header";
 import { MoatStats } from "@/components/moat-scanner/MoatStats";
 import { MoatFilters } from "@/components/moat-scanner/MoatFilters";
@@ -10,13 +12,14 @@ import { demoProposals } from "@/lib/moat-data";
 export default function MoatScannerPage() {
   return (
     <div className="min-h-screen bg-stripe-bg">
+      <MobileMenuButton />
       <Sidebar />
-      <main className="ml-60 min-h-screen">
+      <MainContent>
         <Header
           title="护城河扫描"
           description="AI 驱动的护城河分析与人工审批工作流"
         />
-        <div className="p-8">
+        <div className="p-4 md:p-6 lg:p-8">
           {/* 统计概览 */}
           <MoatStats />
 
@@ -30,7 +33,7 @@ export default function MoatScannerPage() {
             ))}
           </div>
         </div>
-      </main>
+      </MainContent>
     </div>
   );
 }

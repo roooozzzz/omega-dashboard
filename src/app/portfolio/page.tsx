@@ -1,4 +1,8 @@
+"use client";
+
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MainContent } from "@/components/layout/MainContent";
+import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Header } from "@/components/layout/Header";
 import { PortfolioStats } from "@/components/portfolio/PortfolioStats";
 import { AllocationChart } from "@/components/portfolio/AllocationChart";
@@ -7,13 +11,14 @@ import { PositionsTable } from "@/components/portfolio/PositionsTable";
 export default function PortfolioPage() {
   return (
     <div className="min-h-screen bg-stripe-bg">
+      <MobileMenuButton />
       <Sidebar />
-      <main className="ml-60 min-h-screen">
+      <MainContent>
         <Header
           title="持仓管理"
           description="组合持仓与策略配置追踪"
         />
-        <div className="p-8">
+        <div className="p-4 md:p-6 lg:p-8">
           {/* 统计概览 */}
           <PortfolioStats />
 
@@ -23,7 +28,7 @@ export default function PortfolioPage() {
           {/* 持仓表格 */}
           <PositionsTable />
         </div>
-      </main>
+      </MainContent>
     </div>
   );
 }
