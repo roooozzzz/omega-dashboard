@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,11 +20,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${inter.variable} ${inter.className} antialiased`}>
-        <SidebarProvider>
-          {children}
-        </SidebarProvider>
+        <ThemeProvider>
+          <SidebarProvider>
+            {children}
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

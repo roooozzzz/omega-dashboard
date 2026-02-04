@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { useSignalStream } from "@/hooks/useSignals";
 import { useToast } from "@/components/ui/toast";
-import { TradingSignal, ACTION_CONFIG, STRATEGY_CONFIG, SIGNAL_TYPE_CONFIG } from "@/types/signals";
+import { TradingSignal } from "@/hooks/useSignals";
 import { Wifi, WifiOff } from "lucide-react";
 
 interface SignalNotifierProps {
@@ -14,18 +14,23 @@ export function SignalNotifier({ onNewSignal }: SignalNotifierProps) {
   const { addToast } = useToast();
 
   const handleSignal = useCallback((signal: TradingSignal) => {
-    const actionConfig = ACTION_CONFIG[signal.action];
-    const strategyConfig = STRATEGY_CONFIG[signal.strategy];
-    const signalTypeConfig = SIGNAL_TYPE_CONFIG[signal.signal_type];
+    const typeLabel = signal.type === "buy" ? "买入" 
+                    : signal.type === "sell" ? "卖出"
+                    : signal.type === "watch" ? "观望"
+                    : "警报";
+    
+    const strategyLabel = signal.strategy === "long" ? "长线"
+                        : signal.strategy === "mid" ? "中线"
+                        : "短线";
 
     // 显示 Toast 通知
     addToast({
-      type: actionConfig.variant === "success" ? "success" 
-          : actionConfig.variant === "danger" ? "error"
-          : actionConfig.variant === "warning" ? "warning" 
+      type: signal.type === "buy" ? "success" 
+          : signal.type === "sell" ? "error"
+          : signal.type === "watch" ? "warning" 
           : "info",
-      title: `${signal.ticker} - ${signalTypeConfig?.label || signal.signal_type}`,
-      message: `${strategyConfig.label}策略 | ${actionConfig.label} | 评分 ${signal.score}`,
+      title: `${signal.ticker} - ${signal.indicator}`,
+      message: `${strategyLabel}策略 | ${typeLabel} | ${signal.reason}`,
       duration: 8000,
     });
 
@@ -34,7 +39,6 @@ export function SignalNotifier({ onNewSignal }: SignalNotifierProps) {
 
   const { connected, connect, disconnect } = useSignalStream({
     onSignal: handleSignal,
-    autoReconnect: true,
   });
 
   useEffect(() => {

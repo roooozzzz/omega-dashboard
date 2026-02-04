@@ -114,6 +114,53 @@
   --sidebar-ring: #635BFF;
 }
 
+/* Dark Mode - Stripe 风格 */
+.dark {
+  --background: #0A0A0F;
+  --foreground: #E5E5E5;
+  --card: #16161D;
+  --card-foreground: #E5E5E5;
+  --popover: #16161D;
+  --popover-foreground: #E5E5E5;
+  --primary: #635BFF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #16161D;
+  --secondary-foreground: #E5E5E5;
+  --muted: #1E1E26;
+  --muted-foreground: #A0A0A0;
+  --accent: #1E1E26;
+  --accent-foreground: #E5E5E5;
+  --destructive: #FF4D6A;
+  --border: #2A2A35;
+  --input: #2A2A35;
+  --ring: #635BFF;
+  --chart-1: #818CF8;
+  --chart-2: #4ADE80;
+  --chart-3: #FBBF24;
+  --chart-4: #38BDF8;
+  --chart-5: #F87171;
+  --sidebar: #0F0F14;
+  --sidebar-foreground: #E5E5E5;
+  --sidebar-primary: #635BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1E1E26;
+  --sidebar-accent-foreground: #E5E5E5;
+  --sidebar-border: #2A2A35;
+  --sidebar-ring: #635BFF;
+
+  /* Dark mode Stripe tokens override */
+  --color-stripe-bg: #0A0A0F;
+  --color-stripe-bg-white: #16161D;
+  --color-stripe-ink: #E5E5E5;
+  --color-stripe-ink-light: #A0A0A0;
+  --color-stripe-ink-lighter: #6B6B6B;
+  --color-stripe-border: #2A2A35;
+  --color-stripe-border-light: #1E1E26;
+  --shadow-omega-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-omega: 0 2px 5px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-omega-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

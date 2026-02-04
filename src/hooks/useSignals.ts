@@ -1,165 +1,163 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { TradingSignal, SignalStats } from "@/types/signals";
+import {
+  signalsApi,
+  createSignalWebSocket,
+  TradingSignal,
+  SignalStats,
+  SignalFilters,
+  ApiError,
+} from "@/lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const WS_BASE = API_BASE.replace(/^http/, "ws");
-
+// ============ 获取信号列表 ============
 interface UseSignalsOptions {
   limit?: number;
   strategy?: "long" | "mid" | "short";
   ticker?: string;
+  status?: "active" | "executed" | "expired" | "cancelled";
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
 
-interface UseSignalsReturn {
+interface UseSignalsResult {
   signals: TradingSignal[];
+  total: number;
   loading: boolean;
-  error: Error | null;
+  error: string | null;
   stats: SignalStats | null;
-  refetch: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
-export function useSignals(options: UseSignalsOptions = {}): UseSignalsReturn {
-  const { 
-    limit = 50, 
-    strategy, 
-    ticker, 
-    autoRefresh = false, 
-    refreshInterval = 30000 
+export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
+  const {
+    limit = 50,
+    strategy,
+    ticker,
+    status,
+    autoRefresh = false,
+    refreshInterval = 30000,
   } = options;
 
   const [signals, setSignals] = useState<TradingSignal[]>([]);
+  const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<SignalStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchSignals = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ limit: limit.toString() });
-      if (strategy) params.append("strategy", strategy);
-      if (ticker) params.append("ticker", ticker);
+      const filters: SignalFilters = { limit };
+      if (strategy) filters.strategy = strategy;
+      if (ticker) filters.ticker = ticker;
+      if (status) filters.status = status;
 
       const [signalsRes, statsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/signals?${params}`),
-        fetch(`${API_BASE}/api/signals/stats`)
+        signalsApi.getAll(filters),
+        signalsApi.getStats(),
       ]);
 
-      if (!signalsRes.ok) throw new Error("Failed to fetch signals");
-      if (!statsRes.ok) throw new Error("Failed to fetch stats");
-
-      const signalsData = await signalsRes.json();
-      const statsData = await statsRes.json();
-
-      setSignals(signalsData.signals || []);
-      setStats(statsData.stats || null);
+      setSignals(signalsRes.signals || []);
+      setTotal(signalsRes.total || 0);
+      setStats(statsRes.stats || null);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Unknown error"));
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("获取信号数据失败");
+      }
+      console.error("Signals fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, [limit, strategy, ticker]);
+  }, [limit, strategy, ticker, status]);
 
   useEffect(() => {
-    fetchSignals();
+    fetchData();
 
-    if (autoRefresh) {
-      const interval = setInterval(fetchSignals, refreshInterval);
+    if (autoRefresh && refreshInterval > 0) {
+      const interval = setInterval(fetchData, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [fetchSignals, autoRefresh, refreshInterval]);
+  }, [fetchData, autoRefresh, refreshInterval]);
 
-  return { signals, loading, error, stats, refetch: fetchSignals };
+  return { signals, total, loading, error, stats, refresh: fetchData };
 }
 
-
+// ============ WebSocket 实时信号流 ============
 interface UseSignalStreamOptions {
   onSignal?: (signal: TradingSignal) => void;
-  autoReconnect?: boolean;
+  autoConnect?: boolean;
 }
 
-interface UseSignalStreamReturn {
+interface UseSignalStreamResult {
   connected: boolean;
   lastSignal: TradingSignal | null;
-  error: Error | null;
+  error: string | null;
   connect: () => void;
   disconnect: () => void;
 }
 
-export function useSignalStream(options: UseSignalStreamOptions = {}): UseSignalStreamReturn {
-  const { onSignal, autoReconnect = true } = options;
+export function useSignalStream(
+  options: UseSignalStreamOptions = {}
+): UseSignalStreamResult {
+  const { onSignal, autoConnect = false } = options;
 
   const [connected, setConnected] = useState(false);
   const [lastSignal, setLastSignal] = useState<TradingSignal | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-
-    try {
-      const ws = new WebSocket(`${WS_BASE}/api/signals/ws`);
-
-      ws.onopen = () => {
-        setConnected(true);
-        setError(null);
-        console.log("[SignalStream] Connected");
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "signal") {
-            setLastSignal(data.data);
-            onSignal?.(data.data);
-          }
-        } catch (e) {
-          console.error("[SignalStream] Parse error:", e);
-        }
-      };
-
-      ws.onclose = () => {
-        setConnected(false);
-        console.log("[SignalStream] Disconnected");
-
-        if (autoReconnect) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            console.log("[SignalStream] Reconnecting...");
-            connect();
-          }, 3000);
-        }
-      };
-
-      ws.onerror = (e) => {
-        setError(new Error("WebSocket error"));
-        console.error("[SignalStream] Error:", e);
-      };
-
-      wsRef.current = ws;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Connection failed"));
-    }
-  }, [onSignal, autoReconnect]);
-
-  const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    wsRef.current?.close();
-    wsRef.current = null;
-    setConnected(false);
-  }, []);
+  const wsRef = useRef<{
+    connect: () => void;
+    disconnect: () => void;
+  } | null>(null);
 
   useEffect(() => {
+    wsRef.current = createSignalWebSocket(
+      (signal) => {
+        setLastSignal(signal);
+        onSignal?.(signal);
+      },
+      (err) => setError(err.message),
+      () => {
+        setConnected(true);
+        setError(null);
+      },
+      () => setConnected(false)
+    );
+
+    if (autoConnect) {
+      wsRef.current.connect();
+    }
+
     return () => {
-      disconnect();
+      wsRef.current?.disconnect();
     };
-  }, [disconnect]);
+  }, [onSignal, autoConnect]);
+
+  const connect = useCallback(() => {
+    wsRef.current?.connect();
+  }, []);
+
+  const disconnect = useCallback(() => {
+    wsRef.current?.disconnect();
+  }, []);
 
   return { connected, lastSignal, error, connect, disconnect };
 }
+
+// ============ 按策略获取信号 ============
+export function useLongTermSignals(options: Omit<UseSignalsOptions, "strategy"> = {}) {
+  return useSignals({ ...options, strategy: "long" });
+}
+
+export function useMidTermSignals(options: Omit<UseSignalsOptions, "strategy"> = {}) {
+  return useSignals({ ...options, strategy: "mid" });
+}
+
+export function useShortTermSignals(options: Omit<UseSignalsOptions, "strategy"> = {}) {
+  return useSignals({ ...options, strategy: "short" });
+}
+
+export type { TradingSignal, SignalStats };

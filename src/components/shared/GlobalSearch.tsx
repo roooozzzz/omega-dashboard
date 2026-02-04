@@ -85,11 +85,11 @@ export function GlobalSearch() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm text-stripe-ink-lighter bg-stripe-bg border border-stripe-border rounded-md hover:border-stripe-ink-lighter transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-stripe-ink-lighter dark:text-gray-400 bg-stripe-bg dark:bg-white/5 border border-stripe-border dark:border-[#2A2A35] rounded-md hover:border-stripe-ink-lighter dark:hover:border-gray-500 transition-colors"
       >
         <Search className="w-4 h-4" />
         <span>搜索股票...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-white border border-stripe-border rounded">
+        <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-white dark:bg-[#16161D] border border-stripe-border dark:border-[#2A2A35] rounded">
           ⌘K
         </kbd>
       </button>
@@ -105,24 +105,24 @@ export function GlobalSearch() {
       />
 
       {/* Search Modal */}
-      <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-full max-w-lg bg-white rounded-lg shadow-[var(--shadow-omega-lg)] z-50">
+      <div className="fixed left-1/2 top-[20%] -translate-x-1/2 w-full max-w-lg bg-white dark:bg-[#16161D] rounded-lg shadow-[var(--shadow-omega-lg)] z-50">
         {/* Input */}
-        <div className="flex items-center gap-3 p-4 border-b border-stripe-border">
-          <Search className="w-5 h-5 text-stripe-ink-lighter" />
+        <div className="flex items-center gap-3 p-4 border-b border-stripe-border dark:border-[#2A2A35]">
+          <Search className="w-5 h-5 text-stripe-ink-lighter dark:text-gray-500" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索股票代码或公司名称..."
-            className="flex-1 text-sm outline-none placeholder:text-stripe-ink-lighter"
+            className="flex-1 text-sm outline-none placeholder:text-stripe-ink-lighter dark:placeholder:text-gray-500 bg-transparent text-stripe-ink dark:text-white"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="p-1 hover:bg-stripe-bg rounded"
+              className="p-1 hover:bg-stripe-bg dark:hover:bg-white/5 rounded"
             >
-              <X className="w-4 h-4 text-stripe-ink-lighter" />
+              <X className="w-4 h-4 text-stripe-ink-lighter dark:text-gray-500" />
             </button>
           )}
         </div>
@@ -130,7 +130,7 @@ export function GlobalSearch() {
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-2">
           {!query && (
-            <p className="px-4 py-2 text-xs text-stripe-ink-lighter uppercase tracking-wide">
+            <p className="px-4 py-2 text-xs text-stripe-ink-lighter dark:text-gray-500 uppercase tracking-wide">
               热门股票
             </p>
           )}
@@ -138,45 +138,45 @@ export function GlobalSearch() {
             <button
               key={result.ticker}
               onClick={() => handleSelect(result.ticker)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-stripe-bg transition-colors"
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-stripe-bg dark:hover:bg-white/5 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center">
-                <span className="text-sm font-medium text-stripe-ink">
+              <div className="w-8 h-8 rounded-full bg-stripe-bg dark:bg-white/5 flex items-center justify-center">
+                <span className="text-sm font-medium text-stripe-ink dark:text-white">
                   {result.ticker[0]}
                 </span>
               </div>
               <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-stripe-ink">
+                <p className="text-sm font-medium text-stripe-ink dark:text-white">
                   {result.ticker}
                 </p>
-                <p className="text-xs text-stripe-ink-lighter">{result.name}</p>
+                <p className="text-xs text-stripe-ink-lighter dark:text-gray-400">{result.name}</p>
               </div>
-              <span className="text-xs text-stripe-ink-lighter uppercase">
+              <span className="text-xs text-stripe-ink-lighter dark:text-gray-500 uppercase">
                 {result.type === "etf" ? "ETF" : "股票"}
               </span>
             </button>
           ))}
           {query && results.length === 0 && (
-            <p className="px-4 py-8 text-center text-sm text-stripe-ink-lighter">
+            <p className="px-4 py-8 text-center text-sm text-stripe-ink-lighter dark:text-gray-400">
               未找到匹配的股票
             </p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-stripe-border flex items-center justify-between text-xs text-stripe-ink-lighter">
+        <div className="px-4 py-3 border-t border-stripe-border dark:border-[#2A2A35] flex items-center justify-between text-xs text-stripe-ink-lighter dark:text-gray-500">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-stripe-bg border border-stripe-border rounded">↑↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-stripe-bg dark:bg-white/5 border border-stripe-border dark:border-[#2A2A35] rounded">↑↓</kbd>
               选择
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-stripe-bg border border-stripe-border rounded">↵</kbd>
+              <kbd className="px-1.5 py-0.5 bg-stripe-bg dark:bg-white/5 border border-stripe-border dark:border-[#2A2A35] rounded">↵</kbd>
               确认
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-stripe-bg border border-stripe-border rounded">Esc</kbd>
+            <kbd className="px-1.5 py-0.5 bg-stripe-bg dark:bg-white/5 border border-stripe-border dark:border-[#2A2A35] rounded">Esc</kbd>
             关闭
           </span>
         </div>

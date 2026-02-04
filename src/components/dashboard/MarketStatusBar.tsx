@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useMarketData } from "@/hooks/useMarketData";
+import { useSignals } from "@/hooks/useSignals";
 
 interface MarketCard {
   label: string;
@@ -80,17 +81,21 @@ function MarketCardComponent({ card }: { card: MarketCard }) {
 }
 
 export function MarketStatusBar() {
-  const { data, loading, error } = useMarketData(60000); // 每分钟刷新
+  const { data: marketData, loading: marketLoading, error: marketError } = useMarketData(60000);
+  const { stats: signalStats, loading: signalsLoading } = useSignals({ limit: 1 });
+
+  const loading = marketLoading || signalsLoading;
+  const error = marketError;
 
   // 如果加载中或有错误，显示 demo 数据
-  if (loading || error || !data) {
+  if (loading || error || !marketData) {
     return (
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {demoMarketData.map((card) => (
           <MarketCardComponent key={card.label} card={card} />
         ))}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-lg">
             <Loader2 className="w-6 h-6 animate-spin text-stripe-purple" />
           </div>
         )}
@@ -113,23 +118,23 @@ export function MarketStatusBar() {
   const realMarketData: MarketCard[] = [];
 
   // 标普500
-  if (data.sp500) {
+  if (marketData.sp500) {
     realMarketData.push({
       label: "标普500指数",
-      value: formatNumber(data.sp500.value),
-      change: formatPercent(data.sp500.changePercent),
-      changeType: data.sp500.change >= 0 ? "positive" : "negative",
+      value: formatNumber(marketData.sp500.value),
+      change: formatPercent(marketData.sp500.changePercent),
+      changeType: marketData.sp500.change >= 0 ? "positive" : "negative",
     });
   }
 
   // VIX
-  if (data.vix) {
-    const vixStatus = getVIXStatus(data.vix.value);
+  if (marketData.vix) {
+    const vixStatus = getVIXStatus(marketData.vix.value);
     realMarketData.push({
       label: "VIX 恐慌指数",
-      value: data.vix.value.toFixed(2),
-      change: formatPercent(data.vix.changePercent),
-      changeType: data.vix.change <= 0 ? "positive" : "negative", // VIX 下跌是好事
+      value: marketData.vix.value.toFixed(2),
+      change: formatPercent(marketData.vix.changePercent),
+      changeType: marketData.vix.change <= 0 ? "positive" : "negative", // VIX 下跌是好事
       status: vixStatus.status,
       statusLabel: vixStatus.label,
     });
@@ -143,16 +148,18 @@ export function MarketStatusBar() {
     statusLabel: "正常",
   });
 
-  // 今日信号（静态，需要后端支持）
+  // 今日信号（从后端获取）
+  const activeSignals = signalStats?.active || 0;
+  const totalSignals = signalStats?.total || 0;
   realMarketData.push({
     label: "今日信号",
-    value: "7",
-    status: "neutral",
-    statusLabel: "待审核",
+    value: String(totalSignals),
+    status: activeSignals > 0 ? "warning" : "neutral",
+    statusLabel: activeSignals > 0 ? `${activeSignals} 活跃` : "无活跃",
   });
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       {realMarketData.map((card) => (
         <MarketCardComponent key={card.label} card={card} />
       ))}

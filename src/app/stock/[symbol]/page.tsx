@@ -1,24 +1,45 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useStockData } from "@/hooks/useMarketData";
+import { useStockData, useHistoricalData } from "@/hooks";
+import {
+  TechnicalChart,
+  TimeRangeSelector,
+  TimeRange,
+  OHLCData,
+} from "@/components/charts";
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
 }
+
+type ChartType = "technical" | "candle" | "line";
 
 export default function StockDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const symbol = resolvedParams.symbol.toUpperCase();
   const router = useRouter();
   const { data, loading, error, refresh } = useStockData(symbol);
+  
+  // Chart state
+  const [timeRange, setTimeRange] = useState<TimeRange>("3M");
+  const [chartType, setChartType] = useState<ChartType>("technical");
+  const [showMA, setShowMA] = useState(true);
+  const [showBollinger, setShowBollinger] = useState(true);
+  const [crosshairData, setCrosshairData] = useState<{
+    candle: OHLCData | null;
+    ma?: Record<number, number | null>;
+    bollinger?: { upper: number | null; middle: number | null; lower: number | null };
+  } | null>(null);
+
+  const { data: historicalData, loading: histLoading } = useHistoricalData(symbol, timeRange);
 
   const formatNumber = (num: number | undefined) => {
     if (num === undefined || isNaN(num)) return "N/A";
@@ -37,6 +58,14 @@ export default function StockDetailPage({ params }: PageProps) {
     if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
     return `$${num.toLocaleString()}`;
   };
+
+  const handleCrosshairMove = useCallback((chartData: {
+    candle: OHLCData | null;
+    ma?: Record<number, number | null>;
+    bollinger?: { upper: number | null; middle: number | null; lower: number | null };
+  }) => {
+    setCrosshairData(chartData);
+  }, []);
 
   return (
     <div className="min-h-screen bg-stripe-bg">
@@ -135,6 +164,143 @@ export default function StockDetailPage({ params }: PageProps) {
                       </p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* K线图区域 */}
+              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 mb-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-4">
+                    <h3 className="font-semibold text-stripe-ink">技术走势</h3>
+                    {/* Chart Type Selector */}
+                    <div className="flex items-center gap-1 p-1 bg-stripe-bg rounded-lg">
+                      <button
+                        onClick={() => setChartType("technical")}
+                        className={`p-2 rounded-md transition-all ${
+                          chartType === "technical"
+                            ? "bg-white shadow-sm text-stripe-purple"
+                            : "text-stripe-ink-lighter hover:text-stripe-ink"
+                        }`}
+                        title="技术指标图"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setChartType("candle")}
+                        className={`p-2 rounded-md transition-all ${
+                          chartType === "candle"
+                            ? "bg-white shadow-sm text-stripe-purple"
+                            : "text-stripe-ink-lighter hover:text-stripe-ink"
+                        }`}
+                        title="K线图"
+                      >
+                        <CandleIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setChartType("line")}
+                        className={`p-2 rounded-md transition-all ${
+                          chartType === "line"
+                            ? "bg-white shadow-sm text-stripe-purple"
+                            : "text-stripe-ink-lighter hover:text-stripe-ink"
+                        }`}
+                        title="线图"
+                      >
+                        <LineChart className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <TimeRangeSelector
+                    value={timeRange}
+                    onChange={setTimeRange}
+                    theme="light"
+                    size="sm"
+                  />
+                </div>
+
+                {/* Indicator Toggles */}
+                {chartType === "technical" && (
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <label className="flex items-center gap-2 text-sm text-stripe-ink-light cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showMA}
+                        onChange={(e) => setShowMA(e.target.checked)}
+                        className="w-4 h-4 rounded border-stripe-border text-stripe-purple focus:ring-stripe-purple"
+                      />
+                      <span>均线 (MA5/20/60)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-stripe-ink-light cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showBollinger}
+                        onChange={(e) => setShowBollinger(e.target.checked)}
+                        className="w-4 h-4 rounded border-stripe-border text-stripe-purple focus:ring-stripe-purple"
+                      />
+                      <span>布林带 (BB20,2)</span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Crosshair Data Display */}
+                {crosshairData?.candle && (
+                  <div className="flex flex-wrap items-center gap-4 mb-4 text-xs md:text-sm">
+                    <span className="text-stripe-ink-lighter">
+                      日期: <span className="text-stripe-ink font-medium">{crosshairData.candle.time}</span>
+                    </span>
+                    <span className="text-stripe-ink-lighter">
+                      开: <span className="text-stripe-ink font-medium">${formatNumber(crosshairData.candle.open)}</span>
+                    </span>
+                    <span className="text-stripe-ink-lighter">
+                      高: <span className="text-stripe-success font-medium">${formatNumber(crosshairData.candle.high)}</span>
+                    </span>
+                    <span className="text-stripe-ink-lighter">
+                      低: <span className="text-stripe-danger font-medium">${formatNumber(crosshairData.candle.low)}</span>
+                    </span>
+                    <span className="text-stripe-ink-lighter">
+                      收: <span className="text-stripe-ink font-medium">${formatNumber(crosshairData.candle.close)}</span>
+                    </span>
+                    {crosshairData.ma && showMA && (
+                      <>
+                        <span className="text-[#635BFF]">
+                          MA5: {crosshairData.ma[5]?.toFixed(2) ?? "-"}
+                        </span>
+                        <span className="text-[#FF9500]">
+                          MA20: {crosshairData.ma[20]?.toFixed(2) ?? "-"}
+                        </span>
+                        <span className="text-[#00C7BE]">
+                          MA60: {crosshairData.ma[60]?.toFixed(2) ?? "-"}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Chart */}
+                <div className="relative">
+                  {histLoading ? (
+                    <div className="h-[400px] md:h-[500px] flex items-center justify-center bg-stripe-bg rounded-lg">
+                      <div className="flex flex-col items-center gap-2">
+                        <RefreshCw className="w-6 h-6 text-stripe-purple animate-spin" />
+                        <span className="text-sm text-stripe-ink-lighter">加载图表数据...</span>
+                      </div>
+                    </div>
+                  ) : historicalData && historicalData.ohlc.length > 0 ? (
+                    <TechnicalChart
+                      data={historicalData.ohlc}
+                      volumeData={historicalData.volume}
+                      height={window.innerWidth < 768 ? 400 : 500}
+                      theme="light"
+                      showMA={showMA && chartType === "technical"}
+                      maLengths={[5, 20, 60]}
+                      showBollinger={showBollinger && chartType === "technical"}
+                      showVolume={chartType !== "line"}
+                      onCrosshairMove={handleCrosshairMove}
+                    />
+                  ) : (
+                    <div className="h-[400px] md:h-[500px] flex items-center justify-center bg-stripe-bg rounded-lg">
+                      <span className="text-stripe-ink-lighter">暂无图表数据</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

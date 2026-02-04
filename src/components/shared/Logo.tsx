@@ -19,7 +19,7 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
     <div className={cn("flex items-center gap-2.5", className)}>
       <div
         className={cn(
-          "rounded-lg bg-indigo-50 flex items-center justify-center",
+          "rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center",
           s.container
         )}
       >
@@ -43,7 +43,7 @@ export function Logo({ size = "md", showText = true, className }: LogoProps) {
         </svg>
       </div>
       {showText && (
-        <span className="font-semibold text-base text-stripe-ink">OMEGA</span>
+        <span className="font-semibold text-base text-stripe-ink dark:text-white">OMEGA</span>
       )}
     </div>
   );
