@@ -63,7 +63,7 @@ export function VolumeChart({
   const formatData = useCallback(
     (rawData: VolumeData[]): HistogramData<Time>[] => {
       return rawData.map((item, index) => {
-        let color = currentColors.upColor;
+        let color: string = currentColors.upColor;
         const pd = priceDataRef.current;
         if (pd && pd[index]) {
           color = pd[index].close >= pd[index].open ? currentColors.upColor : currentColors.downColor;

@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import { getMarketIndices, getMockMarketIndices } from "@/lib/yahoo-finance";
+import { getMarketIndices } from "@/lib/yahoo-finance";
 
 export async function GET() {
   try {
-    let indices = await getMarketIndices();
+    const indices = await getMarketIndices();
 
-    // 如果 API 失败，使用模拟数据
     const hasData = indices.sp500 || indices.vix;
-    if (!hasData) {
-      console.log("Using mock market data as fallback");
-      indices = getMockMarketIndices();
-    }
 
     // 格式化市场数据
     const marketData = {
@@ -58,32 +53,11 @@ export async function GET() {
     return NextResponse.json({ success: true, data: marketData });
   } catch (error) {
     console.error("Market data API error:", error);
-    
-    // 返回模拟数据
-    const mock = getMockMarketIndices();
-    const marketData = {
-      sp500: {
-        symbol: "SPX",
-        name: "标普500",
-        value: mock.sp500?.regularMarketPrice || 5234.18,
-        change: mock.sp500?.regularMarketChange || 64.32,
-        changePercent: mock.sp500?.regularMarketChangePercent || 1.24,
-      },
-      vix: {
-        symbol: "VIX",
-        name: "恐慌指数",
-        value: mock.vix?.regularMarketPrice || 14.32,
-        change: mock.vix?.regularMarketChange || -0.31,
-        changePercent: mock.vix?.regularMarketChangePercent || -2.15,
-        level: "低波动",
-      },
-      nasdaq: null,
-      dow: null,
-      updatedAt: new Date().toISOString(),
-      isLive: false,
-    };
 
-    return NextResponse.json({ success: true, data: marketData });
+    return NextResponse.json(
+      { success: false, error: "无法获取市场数据" },
+      { status: 503 }
+    );
   }
 }
 
