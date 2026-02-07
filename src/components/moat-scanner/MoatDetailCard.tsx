@@ -38,11 +38,20 @@ const confidenceColor = {
 
 interface MoatDetailCardProps {
   proposal: MoatProposal;
+  onApprove?: (ticker: string) => void;
+  onReject?: (ticker: string) => void;
+  loading?: boolean;
 }
 
-export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
+export function MoatDetailCard({
+  proposal,
+  onApprove,
+  onReject,
+  loading = false,
+}: MoatDetailCardProps) {
   const [expanded, setExpanded] = useState(false);
   const StatusIcon = statusConfig[proposal.status].icon;
+  const isPending = proposal.status === "待审核";
 
   return (
     <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)] hover:shadow-[var(--shadow-omega)] transition-shadow duration-150">
@@ -121,7 +130,7 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
       {expanded && (
         <div className="border-t border-stripe-border">
           {/* Powers Grid */}
-          <div className="p-5 grid grid-cols-5 gap-4">
+          <div className="p-5 grid grid-cols-4 md:grid-cols-7 gap-4">
             {proposal.powers.map((power) => {
               const Icon = power.icon;
               const percentage = (power.score / power.maxScore) * 100;
@@ -147,44 +156,62 @@ export function MoatDetailCard({ proposal }: MoatDetailCardProps) {
                       {power.score}/{power.maxScore}
                     </span>
                   </div>
-                  <p className="text-xs text-stripe-ink-lighter">
-                    {power.description}
-                  </p>
+                  {power.description && (
+                    <p className="text-xs text-stripe-ink-lighter">
+                      {power.description}
+                    </p>
+                  )}
                 </div>
               );
             })}
           </div>
 
           {/* AI Summary */}
-          <div className="px-5 pb-5">
-            <div className="p-4 bg-stripe-info-light rounded-lg">
-              <h4 className="text-sm font-medium text-stripe-info-text mb-2">
-                AI 分析摘要
-              </h4>
-              <p className="text-sm text-stripe-ink-light">
-                {proposal.aiSummary}
-              </p>
+          {proposal.aiSummary && (
+            <div className="px-5 pb-5">
+              <div className="p-4 bg-stripe-info-light rounded-lg">
+                <h4 className="text-sm font-medium text-stripe-info-text mb-2">
+                  AI 分析摘要
+                </h4>
+                <p className="text-sm text-stripe-ink-light">
+                  {proposal.aiSummary}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="px-5 pb-5 flex items-center justify-between">
             <p className="text-xs text-stripe-ink-lighter">
               分析时间: {proposal.analyzedAt}
             </p>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                className="bg-white border-stripe-danger text-stripe-danger hover:bg-stripe-danger-light"
-              >
-                <XCircle className="w-4 h-4" />
-                拒绝
-              </Button>
-              <Button className="bg-stripe-success text-white hover:bg-stripe-success/90">
-                <CheckCircle className="w-4 h-4" />
-                确认
-              </Button>
-            </div>
+            {isPending && (
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="bg-white border-stripe-danger text-stripe-danger hover:bg-stripe-danger-light"
+                  disabled={loading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReject?.(proposal.ticker);
+                  }}
+                >
+                  <XCircle className="w-4 h-4" />
+                  拒绝
+                </Button>
+                <Button
+                  className="bg-stripe-success text-white hover:bg-stripe-success/90"
+                  disabled={loading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onApprove?.(proposal.ticker);
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  确认
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

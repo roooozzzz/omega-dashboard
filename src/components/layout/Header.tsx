@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
@@ -52,7 +52,12 @@ export function Header({ title, description }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState(demoNotifications);
   const { toggleOpen, isMobile } = useSidebar();
+  const [currentTime, setCurrentTime] = useState("");
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+  }, []);
 
   const markAsRead = (id: string) => {
     setNotifications((prev) =>
@@ -92,7 +97,7 @@ export function Header({ title, description }: HeaderProps) {
           </div>
 
           <span className="text-sm text-stripe-ink-lighter dark:text-gray-500 hidden lg:block">
-            最后更新: {new Date().toLocaleTimeString("zh-CN", { hour12: false })}
+            最后更新: {currentTime}
           </span>
 
           {/* Theme Toggle */}

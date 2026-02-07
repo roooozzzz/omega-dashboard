@@ -2,44 +2,49 @@
 
 import { TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
 
-interface StatCard {
-  label: string;
-  value: string;
-  change?: string;
-  changeType?: "positive" | "negative" | "neutral";
-  icon: React.ReactNode;
+interface MoatStatsProps {
+  total: number;
+  pending: number;
+  verified: number;
+  rejected: number;
 }
 
-const stats: StatCard[] = [
-  {
-    label: "已分析总数",
-    value: "156",
-    change: "+12 本周",
-    changeType: "positive",
-    icon: <TrendingUp className="w-5 h-5 text-stripe-purple" />,
-  },
-  {
-    label: "待审核",
-    value: "7",
-    icon: <Clock className="w-5 h-5 text-stripe-warning" />,
-  },
-  {
-    label: "已通过",
-    value: "89",
-    change: "57%",
-    changeType: "positive",
-    icon: <CheckCircle className="w-5 h-5 text-stripe-success" />,
-  },
-  {
-    label: "已拒绝",
-    value: "60",
-    change: "38%",
-    changeType: "negative",
-    icon: <XCircle className="w-5 h-5 text-stripe-danger" />,
-  },
-];
+export function MoatStats({
+  total,
+  pending,
+  verified,
+  rejected,
+}: MoatStatsProps) {
+  const verifiedPct = total > 0 ? Math.round((verified / total) * 100) : 0;
+  const rejectedPct = total > 0 ? Math.round((rejected / total) * 100) : 0;
 
-export function MoatStats() {
+  const stats = [
+    {
+      label: "已分析总数",
+      value: String(total),
+      icon: <TrendingUp className="w-5 h-5 text-stripe-purple" />,
+    },
+    {
+      label: "待审核",
+      value: String(pending),
+      icon: <Clock className="w-5 h-5 text-stripe-warning" />,
+    },
+    {
+      label: "已通过",
+      value: String(verified),
+      change: verifiedPct > 0 ? `${verifiedPct}%` : undefined,
+      changeType: "positive" as const,
+      icon: <CheckCircle className="w-5 h-5 text-stripe-success" />,
+    },
+    {
+      label: "已拒绝",
+      value: String(rejected),
+      change: rejectedPct > 0 ? `${rejectedPct}%` : undefined,
+      changeType: "negative" as const,
+      icon: <XCircle className="w-5 h-5 text-stripe-danger" />,
+    },
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-4 mb-6">
       {stats.map((stat) => (

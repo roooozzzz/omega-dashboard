@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { MarketStatusBar } from "@/components/dashboard/MarketStatusBar";
 import { StrategyPanel } from "@/components/dashboard/StrategyPanel";
 import { MoatScannerTable } from "@/components/dashboard/MoatScannerTable";
+import { SyncStatusBar } from "@/components/shared/SyncStatusBar";
 
 export default function Dashboard() {
   return (
@@ -19,6 +20,9 @@ export default function Dashboard() {
           description="三层量化交易系统 — 人机协作模式"
         />
         <div className="p-4 md:p-6 lg:p-8">
+          {/* 同步状态 */}
+          <SyncStatusBar />
+
           {/* 市场状态 */}
           <MarketStatusBar />
 

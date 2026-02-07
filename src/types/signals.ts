@@ -9,6 +9,8 @@ export type ShortSignalType = "OVERSOLD_T1" | "OVERSOLD_T2" | "BOUNCE";
 
 export type SignalType = LongSignalType | MidSignalType | ShortSignalType;
 
+export type UserDecision = "confirmed" | "ignored" | "pending";
+
 export interface TradingSignal {
   id: string;
   ticker: string;
@@ -22,6 +24,10 @@ export interface TradingSignal {
   suggested_position: number;
   price?: number;
   change_percent?: number;
+  // 用户决策
+  user_decision?: UserDecision;
+  user_decision_at?: string;
+  user_notes?: string;
 }
 
 export interface SignalStats {
@@ -38,8 +44,19 @@ export interface SignalStats {
     HOLD?: number;
     WATCH?: number;
   };
+  by_decision?: {
+    confirmed?: number;
+    ignored?: number;
+    pending?: number;
+  };
   subscribers: number;
 }
+
+export const DECISION_CONFIG: Record<UserDecision, { label: string; variant: "success" | "neutral" | "danger" }> = {
+  confirmed: { label: "已确认", variant: "success" },
+  ignored: { label: "已忽略", variant: "neutral" },
+  pending: { label: "待处理", variant: "danger" },
+};
 
 // 信号类型配置
 export const SIGNAL_TYPE_CONFIG: Record<SignalType, { label: string; color: string }> = {

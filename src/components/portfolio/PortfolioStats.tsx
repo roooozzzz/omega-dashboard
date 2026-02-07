@@ -13,30 +13,24 @@ interface StatCard {
 const stats: StatCard[] = [
   {
     label: "总市值",
-    value: "$1,254,832",
-    change: "+12.5%",
-    changeType: "positive",
+    value: "$0",
     icon: <Wallet className="w-5 h-5 text-stripe-purple" />,
   },
   {
     label: "总收益",
-    value: "+$142,567",
-    change: "+11.36%",
-    changeType: "positive",
+    value: "$0",
     icon: <TrendingUp className="w-5 h-5 text-stripe-success" />,
   },
   {
     label: "持仓数量",
-    value: "15",
-    change: "3 策略",
+    value: "0",
+    change: "未连接",
     changeType: "neutral",
     icon: <Briefcase className="w-5 h-5 text-stripe-ink-light" />,
   },
   {
     label: "可用现金",
-    value: "$125,483",
-    change: "10%",
-    changeType: "neutral",
+    value: "$0",
     icon: <DollarSign className="w-5 h-5 text-stripe-warning" />,
   },
 ];

@@ -1,12 +1,15 @@
 "use client";
 
-import { Building2, TrendingUp, Zap, Clock, Target, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { TradingSignal, STRATEGY_CONFIG, ACTION_CONFIG, SIGNAL_TYPE_CONFIG } from "@/types/signals";
+import { useState } from "react";
+import { Building2, TrendingUp, Zap, Clock, Target, ArrowUpRight, ArrowDownRight, Check, X, Loader2 } from "lucide-react";
+import { TradingSignal, STRATEGY_CONFIG, ACTION_CONFIG, SIGNAL_TYPE_CONFIG, DECISION_CONFIG } from "@/types/signals";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { signalsApi } from "@/lib/api";
 
 interface SignalCardProps {
   signal: TradingSignal;
   onClick?: () => void;
+  onDecisionChange?: (signal: TradingSignal) => void;
 }
 
 const StrategyIcons = {
@@ -15,7 +18,10 @@ const StrategyIcons = {
   short: Zap,
 };
 
-export function SignalCard({ signal, onClick }: SignalCardProps) {
+export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProps) {
+  const [decision, setDecision] = useState(signal.user_decision || "pending");
+  const [loading, setLoading] = useState(false);
+
   const strategyConfig = STRATEGY_CONFIG[signal.strategy];
   const actionConfig = ACTION_CONFIG[signal.action];
   const signalTypeConfig = SIGNAL_TYPE_CONFIG[signal.signal_type];
@@ -31,11 +37,42 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
     });
   };
 
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      await signalsApi.confirm(signal.id);
+      setDecision("confirmed");
+      onDecisionChange?.({ ...signal, user_decision: "confirmed" });
+    } catch (err) {
+      console.error("确认信号失败:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIgnore = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      await signalsApi.ignore(signal.id);
+      setDecision("ignored");
+      onDecisionChange?.({ ...signal, user_decision: "ignored" });
+    } catch (err) {
+      console.error("忽略信号失败:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showDecisionButtons = signal.strategy !== "long" && decision === "pending";
+  const decisionConfig = decision !== "pending" ? DECISION_CONFIG[decision] : null;
+
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`
-        bg-white rounded-lg border border-stripe-border p-4
+        bg-white dark:bg-stripe-ink rounded-lg border border-stripe-border dark:border-stripe-ink-light p-4
         shadow-[var(--shadow-omega-sm)] hover:shadow-[var(--shadow-omega-md)]
         transition-all cursor-pointer hover:border-stripe-purple/30
       `}
@@ -43,13 +80,13 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-stripe-bg flex items-center justify-center">
-            <span className="text-sm font-bold text-stripe-ink">
+          <div className="w-10 h-10 rounded-full bg-stripe-bg dark:bg-stripe-ink-lighter/10 flex items-center justify-center">
+            <span className="text-sm font-bold text-stripe-ink dark:text-white">
               {signal.ticker.slice(0, 2)}
             </span>
           </div>
           <div>
-            <h3 className="font-semibold text-stripe-ink">{signal.ticker}</h3>
+            <h3 className="font-semibold text-stripe-ink dark:text-white">{signal.ticker}</h3>
             {signal.name && (
               <p className="text-xs text-stripe-ink-lighter">{signal.name}</p>
             )}
@@ -77,13 +114,13 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-stripe-ink-lighter" />
-          <span className="text-sm text-stripe-ink">
+          <span className="text-sm text-stripe-ink dark:text-white">
             评分 <span className="font-semibold">{signal.score}</span>
           </span>
         </div>
         {signal.price && (
           <div className="flex items-center gap-1">
-            <span className="text-sm font-medium text-stripe-ink">
+            <span className="text-sm font-medium text-stripe-ink dark:text-white">
               ${signal.price.toFixed(2)}
             </span>
             {signal.change_percent !== undefined && (
@@ -108,6 +145,36 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
           {signal.reasons.slice(0, 2).map((reason, i) => (
             <p key={i} className="truncate">• {reason}</p>
           ))}
+        </div>
+      )}
+
+      {/* Decision Buttons or Badge */}
+      {signal.strategy !== "long" && (
+        <div className="mb-3">
+          {showDecisionButtons ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-stripe-success-light text-[#0E6245] hover:bg-stripe-success/20 transition-colors disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                确认执行
+              </button>
+              <button
+                onClick={handleIgnore}
+                disabled={loading}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-stripe-bg text-stripe-ink-lighter hover:bg-stripe-border transition-colors disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                忽略
+              </button>
+            </div>
+          ) : decisionConfig ? (
+            <StatusBadge variant={decisionConfig.variant}>
+              {decisionConfig.label}
+            </StatusBadge>
+          ) : null}
         </div>
       )}
 

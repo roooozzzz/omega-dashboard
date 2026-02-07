@@ -72,10 +72,13 @@ async function request<T>(
 
 // ============ 市场数据 ============
 export interface MarketDataResponse {
-  sp500: IndexData | null;
-  vix: VixData | null;
-  nasdaq: IndexData | null;
-  dow: IndexData | null;
+  spx: IndexData;
+  ndx: IndexData;
+  vix: IndexData;
+  ma200: number;
+  ndxMa200: number;
+  circuitBreaker: boolean;
+  circuitBreakerReasons: string[];
   updatedAt: string;
 }
 
@@ -85,14 +88,51 @@ export interface IndexData {
   value: number;
   change: number;
   changePercent: number;
+  status: "normal" | "warning" | "danger";
 }
 
-export interface VixData extends IndexData {
-  level: "low" | "moderate" | "high" | "extreme";
+// ============ Finnhub 数据 ============
+export interface FinnhubQuote {
+  symbol: string;
+  current: number;
+  change: number;
+  changePercent: number;
+  high: number;
+  low: number;
+  open: number;
+  previousClose: number;
+  timestamp: string;
+}
+
+export interface NewsSentiment {
+  symbol: string;
+  buzzArticles: number;
+  buzzWeeklyAvg: number;
+  sentimentScore: number;
+  bullishPercent: number;
+  bearishPercent: number;
+  sectorAvgBullish: number;
+  sectorAvgScore: number;
+}
+
+export interface AnalystRecommendation {
+  symbol: string;
+  period: string;
+  strongBuy: number;
+  buy: number;
+  hold: number;
+  sell: number;
+  strongSell: number;
 }
 
 export const marketApi = {
   getData: () => request<MarketDataResponse>("/api/market"),
+  getQuote: (symbol: string) =>
+    request<FinnhubQuote>(`/api/market/quote/${encodeURIComponent(symbol)}`),
+  getSentiment: (symbol: string) =>
+    request<NewsSentiment | null>(`/api/market/sentiment/${encodeURIComponent(symbol)}`),
+  getRecommendation: (symbol: string) =>
+    request<AnalystRecommendation[]>(`/api/market/recommendation/${encodeURIComponent(symbol)}`),
 };
 
 // ============ 股票数据 ============
@@ -218,6 +258,10 @@ export interface TradingSignal {
   triggeredAt: string;
   expiresAt?: string;
   status: "active" | "executed" | "expired" | "cancelled";
+  // 用户决策
+  userDecision?: "confirmed" | "ignored" | "pending";
+  userDecisionAt?: string;
+  userNotes?: string;
 }
 
 export interface SignalStats {
@@ -233,6 +277,11 @@ export interface SignalStats {
     sell: number;
     watch: number;
     alert: number;
+  };
+  byDecision?: {
+    confirmed: number;
+    ignored: number;
+    pending: number;
   };
 }
 
@@ -252,6 +301,17 @@ export interface SignalFilters {
   status?: "active" | "executed" | "expired" | "cancelled";
 }
 
+export interface ScannerStatus {
+  status: "idle" | "scanning" | "done" | "error";
+  progress: number;
+  phase: string;
+  lastScanAt: string | null;
+  totalSignals: number;
+  running: boolean;
+  intervalSeconds: number;
+  error: string | null;
+}
+
 export const signalsApi = {
   getAll: (filters: SignalFilters = {}) => {
     const params = new URLSearchParams();
@@ -259,14 +319,28 @@ export const signalsApi = {
     if (filters.strategy) params.append("strategy", filters.strategy);
     if (filters.ticker) params.append("ticker", filters.ticker);
     if (filters.status) params.append("status", filters.status);
-    
+
     const query = params.toString();
     return request<SignalsListResponse>(
       `/api/signals${query ? `?${query}` : ""}`
     );
   },
-  
+
   getStats: () => request<SignalStatsResponse>("/api/signals/stats"),
+
+  getScannerStatus: () => request<ScannerStatus>("/api/signals/scanner-status"),
+
+  confirm: (signalId: string, notes?: string) =>
+    request<TradingSignal>(`/api/signals/${encodeURIComponent(signalId)}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({ notes }),
+    }),
+
+  ignore: (signalId: string, notes?: string) =>
+    request<TradingSignal>(`/api/signals/${encodeURIComponent(signalId)}/ignore`, {
+      method: "POST",
+      body: JSON.stringify({ notes }),
+    }),
 };
 
 // ============ WebSocket ============

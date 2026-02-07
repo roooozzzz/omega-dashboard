@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, TrendingUp, Zap, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Building2, TrendingUp, Zap, Loader2, Check, X } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
   Table,
@@ -11,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSignals, TradingSignal } from "@/hooks/useSignals";
+import { signalsApi } from "@/lib/api";
 import type { LucideIcon } from "lucide-react";
 
 type SignalTypeDisplay = "买入" | "卖出" | "观望" | "预警";
@@ -83,8 +85,65 @@ interface SignalsTableProps {
   limit?: number;
 }
 
+function DecisionCell({ signal, onUpdate }: { signal: TradingSignal; onUpdate: () => void }) {
+  const [decision, setDecision] = useState(
+    (signal as unknown as { user_decision?: string }).user_decision || "pending"
+  );
+  const [loading, setLoading] = useState(false);
+
+  if (signal.strategy === "long") {
+    return <span className="text-xs text-stripe-ink-lighter">-</span>;
+  }
+
+  if (decision === "confirmed") {
+    return <StatusBadge variant="success">已确认</StatusBadge>;
+  }
+  if (decision === "ignored") {
+    return <StatusBadge variant="neutral">已忽略</StatusBadge>;
+  }
+
+  const handleAction = async (action: "confirm" | "ignore") => {
+    setLoading(true);
+    try {
+      if (action === "confirm") {
+        await signalsApi.confirm(signal.id);
+        setDecision("confirmed");
+      } else {
+        await signalsApi.ignore(signal.id);
+        setDecision("ignored");
+      }
+      onUpdate();
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => handleAction("confirm")}
+        disabled={loading}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-stripe-success-light text-[#0E6245] hover:bg-stripe-success/20 transition-colors disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+        确认
+      </button>
+      <button
+        onClick={() => handleAction("ignore")}
+        disabled={loading}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-stripe-bg text-stripe-ink-lighter hover:bg-stripe-border transition-colors disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+        忽略
+      </button>
+    </div>
+  );
+}
+
 export function SignalsTable({ strategy, limit = 50 }: SignalsTableProps) {
-  const { signals, loading, error } = useSignals({
+  const { signals, loading, error, refresh } = useSignals({
     strategy,
     limit,
     autoRefresh: true,
@@ -166,6 +225,9 @@ export function SignalsTable({ strategy, limit = 50 }: SignalsTableProps) {
               <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
                 原因
               </TableHead>
+              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
+                决策
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -246,6 +308,9 @@ export function SignalsTable({ strategy, limit = 50 }: SignalsTableProps) {
                     <p className="text-sm text-stripe-ink-lighter max-w-xs truncate">
                       {signal.reason}
                     </p>
+                  </TableCell>
+                  <TableCell>
+                    <DecisionCell signal={signal} onUpdate={refresh} />
                   </TableCell>
                 </TableRow>
               );

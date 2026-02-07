@@ -44,32 +44,67 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
   const [stats, setStats] = useState<SignalStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const failCountRef = useRef(0);
+  const isFetchingRef = useRef(false);
 
   const fetchData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
       const filters: SignalFilters = { limit };
       if (strategy) filters.strategy = strategy;
       if (ticker) filters.ticker = ticker;
       if (status) filters.status = status;
 
-      const [signalsRes, statsRes] = await Promise.all([
-        signalsApi.getAll(filters),
-        signalsApi.getStats(),
-      ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const signalsRes: any = await signalsApi.getAll(filters);
 
       setSignals(signalsRes.signals || []);
       setTotal(signalsRes.total || 0);
-      setStats(statsRes.stats || null);
+
+      // stats 内嵌在 signals 响应中，字段名映射
+      const rawStats = signalsRes.stats;
+      if (rawStats) {
+        const byStrategy = rawStats.byStrategy ?? rawStats.by_strategy ?? {};
+        const byAction = rawStats.byAction ?? rawStats.by_action ?? {};
+        const byDecision = rawStats.byDecision ?? rawStats.by_decision ?? {};
+        setStats({
+          total: rawStats.total ?? 0,
+          active: rawStats.today ?? 0,
+          byStrategy: {
+            long: byStrategy.long ?? 0,
+            mid: byStrategy.mid ?? 0,
+            short: byStrategy.short ?? 0,
+          },
+          byType: {
+            buy: byAction.BUY ?? byAction.buy ?? 0,
+            sell: byAction.SELL ?? byAction.sell ?? 0,
+            watch: byAction.WATCH ?? byAction.watch ?? 0,
+            alert: byAction.alert ?? 0,
+          },
+          byDecision: {
+            confirmed: byDecision.confirmed ?? 0,
+            ignored: byDecision.ignored ?? 0,
+            pending: byDecision.pending ?? 0,
+          },
+        });
+      }
       setError(null);
+      failCountRef.current = 0;
     } catch (err) {
+      failCountRef.current += 1;
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
         setError("获取信号数据失败");
       }
-      console.error("Signals fetch error:", err);
+      if (failCountRef.current <= 3) {
+        console.warn(`Signals fetch failed (${failCountRef.current}):`, err);
+      }
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [limit, strategy, ticker, status]);
 
@@ -77,7 +112,10 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
     fetchData();
 
     if (autoRefresh && refreshInterval > 0) {
-      const interval = setInterval(fetchData, refreshInterval);
+      const interval = setInterval(() => {
+        if (failCountRef.current >= 3) return;
+        fetchData();
+      }, refreshInterval);
       return () => clearInterval(interval);
     }
   }, [fetchData, autoRefresh, refreshInterval]);
@@ -107,6 +145,8 @@ export function useSignalStream(
   const [connected, setConnected] = useState(false);
   const [lastSignal, setLastSignal] = useState<TradingSignal | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const onSignalRef = useRef(onSignal);
+  onSignalRef.current = onSignal;
 
   const wsRef = useRef<{
     connect: () => void;
@@ -117,7 +157,7 @@ export function useSignalStream(
     wsRef.current = createSignalWebSocket(
       (signal) => {
         setLastSignal(signal);
-        onSignal?.(signal);
+        onSignalRef.current?.(signal);
       },
       (err) => setError(err.message),
       () => {
@@ -134,7 +174,7 @@ export function useSignalStream(
     return () => {
       wsRef.current?.disconnect();
     };
-  }, [onSignal, autoConnect]);
+  }, [autoConnect]);
 
   const connect = useCallback(() => {
     wsRef.current?.connect();

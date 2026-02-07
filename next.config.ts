@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // 生产环境优化
-  reactStrictMode: true,
+  reactStrictMode: false,
   
   // 输出配置（Vercel 默认使用 standalone 无需显式配置）
   // output: 'standalone',

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, TrendingUp, Zap } from "lucide-react";
+import { Building2, TrendingUp, Zap, Inbox } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import type { LucideIcon } from "lucide-react";
 
@@ -169,123 +169,26 @@ function PositionRow({ position }: { position: Position }) {
   );
 }
 
-// Demo data
-export const demoPositions: Position[] = [
-  {
-    id: "1",
-    ticker: "NVDA",
-    name: "英伟达",
-    strategy: "long",
-    shares: 150,
-    avgCost: 485.32,
-    currentPrice: 878.45,
-    value: 131767,
-    gain: 58969,
-    gainPercent: 81.02,
-    weight: 10.5,
-    moatScore: 24,
-  },
-  {
-    id: "2",
-    ticker: "MSFT",
-    name: "微软",
-    strategy: "long",
-    shares: 200,
-    avgCost: 332.15,
-    currentPrice: 412.35,
-    value: 82470,
-    gain: 16040,
-    gainPercent: 24.16,
-    weight: 6.6,
-    moatScore: 26,
-  },
-  {
-    id: "3",
-    ticker: "AAPL",
-    name: "苹果",
-    strategy: "long",
-    shares: 300,
-    avgCost: 165.42,
-    currentPrice: 185.92,
-    value: 55776,
-    gain: 6150,
-    gainPercent: 12.40,
-    weight: 4.5,
-    moatScore: 22,
-  },
-  {
-    id: "4",
-    ticker: "SMCI",
-    name: "超微电脑",
-    strategy: "mid",
-    shares: 80,
-    avgCost: 756.45,
-    currentPrice: 892.45,
-    value: 71396,
-    gain: 10880,
-    gainPercent: 17.97,
-    weight: 5.7,
-    rsRating: 94,
-  },
-  {
-    id: "5",
-    ticker: "ARM",
-    name: "Arm Holdings",
-    strategy: "mid",
-    shares: 200,
-    avgCost: 142.30,
-    currentPrice: 156.78,
-    value: 31356,
-    gain: 2896,
-    gainPercent: 10.18,
-    weight: 2.5,
-    rsRating: 88,
-  },
-  {
-    id: "6",
-    ticker: "CRWD",
-    name: "CrowdStrike",
-    strategy: "long",
-    shares: 100,
-    avgCost: 245.67,
-    currentPrice: 312.45,
-    value: 31245,
-    gain: 6678,
-    gainPercent: 27.19,
-    weight: 2.5,
-    moatScore: 23,
-  },
-  {
-    id: "7",
-    ticker: "GOOGL",
-    name: "谷歌",
-    strategy: "short",
-    shares: 400,
-    avgCost: 138.45,
-    currentPrice: 141.22,
-    value: 56488,
-    gain: 1108,
-    gainPercent: 2.00,
-    weight: 4.5,
-    rsi: 24,
-  },
-  {
-    id: "8",
-    ticker: "PLTR",
-    name: "Palantir",
-    strategy: "mid",
-    shares: 500,
-    avgCost: 22.45,
-    currentPrice: 24.67,
-    value: 12335,
-    gain: 1110,
-    gainPercent: 9.89,
-    weight: 1.0,
-    rsRating: 82,
-  },
-];
+const positions: Position[] = [];
 
 export function PositionsTable() {
+  if (positions.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)]">
+        <div className="p-5 border-b border-stripe-border">
+          <h2 className="font-semibold text-stripe-ink">持仓明细</h2>
+        </div>
+        <div className="py-16 flex flex-col items-center justify-center text-center">
+          <Inbox className="w-12 h-12 text-stripe-ink-lighter mb-4" />
+          <p className="text-sm font-medium text-stripe-ink">暂无持仓</p>
+          <p className="text-xs text-stripe-ink-lighter mt-1">
+            连接券商账户后，持仓数据将自动同步
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)]">
       {/* Header */}
@@ -293,7 +196,7 @@ export function PositionsTable() {
         <div>
           <h2 className="font-semibold text-stripe-ink">持仓明细</h2>
           <p className="text-sm text-stripe-ink-lighter mt-0.5">
-            {demoPositions.length} 个持仓，覆盖 3 层策略
+            {positions.length} 个持仓，覆盖 3 层策略
           </p>
         </div>
       </div>
@@ -332,7 +235,7 @@ export function PositionsTable() {
           </tr>
         </thead>
         <tbody>
-          {demoPositions.map((position) => (
+          {positions.map((position) => (
             <PositionRow key={position.id} position={position} />
           ))}
         </tbody>

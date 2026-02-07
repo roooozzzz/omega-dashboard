@@ -15,21 +15,21 @@ export function AllocationChart() {
     {
       label: "长线 (THE CORE)",
       target: 50,
-      actual: 48.2,
+      actual: 0,
       icon: <Building2 className="w-4 h-4" />,
       color: "#0A2540",
     },
     {
       label: "中线 (THE FLOW)",
       target: 30,
-      actual: 32.1,
+      actual: 0,
       icon: <TrendingUp className="w-4 h-4" />,
       color: "#635BFF",
     },
     {
       label: "短线 (THE SWING)",
       target: 20,
-      actual: 19.7,
+      actual: 0,
       icon: <Zap className="w-4 h-4" />,
       color: "#FFBB00",
     },
@@ -39,8 +39,8 @@ export function AllocationChart() {
     <div className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)] mb-6">
       <h3 className="font-semibold text-stripe-ink mb-4">策略配置</h3>
 
-      {/* Visual Bar */}
-      <div className="h-4 rounded-full overflow-hidden flex mb-6">
+      {/* Visual Bar - empty state */}
+      <div className="h-4 rounded-full overflow-hidden flex mb-6 bg-stripe-bg">
         {allocations.map((alloc) => (
           <div
             key={alloc.label}
@@ -69,15 +69,9 @@ export function AllocationChart() {
                 <span className="text-stripe-ink-lighter">
                   目标: {alloc.target}%
                 </span>
-                <span className="text-stripe-ink">
+                <span className="text-stripe-ink-lighter">
                   实际: {alloc.actual.toFixed(1)}%
                 </span>
-                {Math.abs(alloc.actual - alloc.target) > 2 && (
-                  <span className="text-stripe-warning text-xs">
-                    ({alloc.actual > alloc.target ? "+" : ""}
-                    {(alloc.actual - alloc.target).toFixed(1)}%)
-                  </span>
-                )}
               </div>
             </div>
           </div>
