@@ -68,7 +68,7 @@ export function MoatScannerTable() {
             AI 分析完成，等待人工审核确认
           </p>
         </div>
-        <Link href="/moat-scanner">
+        <Link href="/signals?strategy=long&tab=moat">
           <Button
             variant="outline"
             className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg"
@@ -167,7 +167,7 @@ export function MoatScannerTable() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Link href="/moat-scanner">
+                    <Link href="/signals?strategy=long&tab=moat">
                       <Button
                         variant="ghost"
                         size="sm"

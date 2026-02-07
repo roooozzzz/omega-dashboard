@@ -27,6 +27,7 @@ interface Strategy {
   color: string;
   stocks: Stock[];
   loading: boolean;
+  href: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,7 +126,7 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
 
       {/* Footer */}
       <div className="p-4 border-t border-stripe-border">
-        <Link href="/signals">
+        <Link href={strategy.href}>
           <Button
             variant="ghost"
             className="w-full justify-center text-stripe-purple hover:bg-stripe-bg"
@@ -154,6 +155,7 @@ export function StrategyPanel() {
       color: "bg-stripe-ink",
       stocks: longSignals.map(signalToStock),
       loading: longLoading,
+      href: "/signals?strategy=long",
     },
     {
       id: "flow",
@@ -164,6 +166,7 @@ export function StrategyPanel() {
       color: "bg-stripe-purple",
       stocks: midSignals.map(signalToStock),
       loading: midLoading,
+      href: "/signals?strategy=mid",
     },
     {
       id: "swing",
@@ -174,6 +177,7 @@ export function StrategyPanel() {
       color: "bg-stripe-warning",
       stocks: shortSignals.map(signalToStock),
       loading: shortLoading,
+      href: "/signals?strategy=short",
     },
   ];
 

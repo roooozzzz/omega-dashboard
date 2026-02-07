@@ -2,13 +2,13 @@
 
 import { use, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon, Newspaper, Users } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useStockData, useHistoricalData } from "@/hooks";
+import { useStockData, useHistoricalData, useSentiment, useRecommendation } from "@/hooks";
 import {
   TechnicalChart,
   TimeRangeSelector,
@@ -40,6 +40,8 @@ export default function StockDetailPage({ params }: PageProps) {
   } | null>(null);
 
   const { data: historicalData, loading: histLoading } = useHistoricalData(symbol, timeRange);
+  const { data: sentiment } = useSentiment(symbol);
+  const { data: recommendations } = useRecommendation(symbol);
 
   const formatNumber = (num: number | undefined) => {
     if (num === undefined || isNaN(num)) return "N/A";
@@ -431,6 +433,200 @@ export default function StockDetailPage({ params }: PageProps) {
                     </div>
                   ) : (
                     <p className="text-stripe-ink-lighter">数据不足</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Finnhub 情绪 & 分析师评级 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                {/* 新闻情绪 */}
+                <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Newspaper className="w-4 h-4 text-stripe-purple" />
+                    <h3 className="font-semibold text-stripe-ink">新闻情绪</h3>
+                  </div>
+                  {sentiment ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold ${
+                            sentiment.sentimentScore > 0.2
+                              ? "bg-stripe-success-light text-stripe-success"
+                              : sentiment.sentimentScore < -0.2
+                              ? "bg-stripe-danger-light text-stripe-danger"
+                              : "bg-stripe-bg text-stripe-ink"
+                          }`}
+                        >
+                          {sentiment.sentimentScore > 0 ? "+" : ""}
+                          {sentiment.sentimentScore.toFixed(2)}
+                        </div>
+                        <div className="flex-1">
+                          <StatusBadge
+                            variant={
+                              sentiment.sentimentScore > 0.2
+                                ? "success"
+                                : sentiment.sentimentScore < -0.2
+                                ? "danger"
+                                : "neutral"
+                            }
+                          >
+                            {sentiment.sentimentScore > 0.2
+                              ? "偏多"
+                              : sentiment.sentimentScore < -0.2
+                              ? "偏空"
+                              : "中性"}
+                          </StatusBadge>
+                          <p className="text-xs text-stripe-ink-lighter mt-1">
+                            近一周 {sentiment.buzzArticles} 篇报道
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-stripe-ink-lighter">看涨</span>
+                          <span className="text-stripe-success font-medium">
+                            {(sentiment.bullishPercent * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stripe-ink-lighter">看跌</span>
+                          <span className="text-stripe-danger font-medium">
+                            {(sentiment.bearishPercent * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stripe-ink-lighter">行业均分</span>
+                          <span className="text-stripe-ink font-medium">
+                            {sentiment.sectorAvgScore.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stripe-ink-lighter">行业看涨</span>
+                          <span className="text-stripe-ink font-medium">
+                            {(sentiment.sectorAvgBullish * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-stripe-ink-lighter">暂无情绪数据</p>
+                  )}
+                </div>
+
+                {/* 分析师评级 */}
+                <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-4 h-4 text-stripe-purple" />
+                    <h3 className="font-semibold text-stripe-ink">分析师评级</h3>
+                  </div>
+                  {recommendations.length > 0 ? (() => {
+                    const latest = recommendations[0];
+                    const total = latest.strongBuy + latest.buy + latest.hold + latest.sell + latest.strongSell;
+                    const bullish = latest.strongBuy + latest.buy;
+                    const bearish = latest.sell + latest.strongSell;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold ${
+                              bullish > bearish + latest.hold
+                                ? "bg-stripe-success-light text-stripe-success"
+                                : bearish > bullish
+                                ? "bg-stripe-danger-light text-stripe-danger"
+                                : "bg-stripe-bg text-stripe-ink"
+                            }`}
+                          >
+                            {total > 0 ? `${Math.round((bullish / total) * 100)}%` : "N/A"}
+                          </div>
+                          <div className="flex-1">
+                            <StatusBadge
+                              variant={
+                                bullish > bearish + latest.hold
+                                  ? "success"
+                                  : bearish > bullish
+                                  ? "danger"
+                                  : "neutral"
+                              }
+                            >
+                              {bullish > bearish + latest.hold
+                                ? "多数看好"
+                                : bearish > bullish
+                                ? "多数看空"
+                                : "分歧较大"}
+                            </StatusBadge>
+                            <p className="text-xs text-stripe-ink-lighter mt-1">
+                              {latest.period} | {total} 位分析师
+                            </p>
+                          </div>
+                        </div>
+                        {/* Stacked bar */}
+                        {total > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex h-3 rounded-full overflow-hidden">
+                              {latest.strongBuy > 0 && (
+                                <div
+                                  className="bg-[#0E6245]"
+                                  style={{ width: `${(latest.strongBuy / total) * 100}%` }}
+                                  title={`强力买入 ${latest.strongBuy}`}
+                                />
+                              )}
+                              {latest.buy > 0 && (
+                                <div
+                                  className="bg-stripe-success"
+                                  style={{ width: `${(latest.buy / total) * 100}%` }}
+                                  title={`买入 ${latest.buy}`}
+                                />
+                              )}
+                              {latest.hold > 0 && (
+                                <div
+                                  className="bg-stripe-warning"
+                                  style={{ width: `${(latest.hold / total) * 100}%` }}
+                                  title={`持有 ${latest.hold}`}
+                                />
+                              )}
+                              {latest.sell > 0 && (
+                                <div
+                                  className="bg-stripe-danger"
+                                  style={{ width: `${(latest.sell / total) * 100}%` }}
+                                  title={`卖出 ${latest.sell}`}
+                                />
+                              )}
+                              {latest.strongSell > 0 && (
+                                <div
+                                  className="bg-[#8B0000]"
+                                  style={{ width: `${(latest.strongSell / total) * 100}%` }}
+                                  title={`强力卖出 ${latest.strongSell}`}
+                                />
+                              )}
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 text-xs text-center">
+                              <div>
+                                <span className="text-[#0E6245] font-medium">{latest.strongBuy}</span>
+                                <p className="text-stripe-ink-lighter">强买</p>
+                              </div>
+                              <div>
+                                <span className="text-stripe-success font-medium">{latest.buy}</span>
+                                <p className="text-stripe-ink-lighter">买入</p>
+                              </div>
+                              <div>
+                                <span className="text-stripe-warning font-medium">{latest.hold}</span>
+                                <p className="text-stripe-ink-lighter">持有</p>
+                              </div>
+                              <div>
+                                <span className="text-stripe-danger font-medium">{latest.sell}</span>
+                                <p className="text-stripe-ink-lighter">卖出</p>
+                              </div>
+                              <div>
+                                <span className="text-[#8B0000] font-medium">{latest.strongSell}</span>
+                                <p className="text-stripe-ink-lighter">强卖</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
+                    <p className="text-sm text-stripe-ink-lighter">暂无分析师评级</p>
                   )}
                 </div>
               </div>

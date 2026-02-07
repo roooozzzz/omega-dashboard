@@ -3,7 +3,12 @@
 import { Search, Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function SignalsFilters() {
+interface SignalsFiltersProps {
+  strategy?: string | null;
+  onStrategyChange?: (strategy: string | null) => void;
+}
+
+export function SignalsFilters({ strategy, onStrategyChange }: SignalsFiltersProps) {
   return (
     <div className="bg-white rounded-lg border border-stripe-border p-4 mb-6 shadow-[var(--shadow-omega-sm)]">
       <div className="flex items-center gap-4">
@@ -26,7 +31,11 @@ export function SignalsFilters() {
           <option value="alert">预警</option>
         </select>
 
-        <select className="px-3 py-2 text-sm border border-stripe-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple">
+        <select
+          value={strategy ?? ""}
+          onChange={(e) => onStrategyChange?.(e.target.value || null)}
+          className="px-3 py-2 text-sm border border-stripe-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
+        >
           <option value="">全部策略</option>
           <option value="long">长线</option>
           <option value="mid">中线</option>

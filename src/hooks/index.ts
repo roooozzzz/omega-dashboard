@@ -31,3 +31,6 @@ export type { TradingSignal, SignalStats } from "./useSignals";
 
 // 历史数据
 export { useHistoricalData } from "./useHistoricalData";
+
+// Finnhub 数据（情绪 + 分析师评级）
+export { useSentiment, useRecommendation } from "./useFinnhubData";

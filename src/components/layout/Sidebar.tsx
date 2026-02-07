@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  ShieldCheck,
   Radio,
   Briefcase,
   Settings,
@@ -20,7 +19,6 @@ import { useSidebar } from "@/contexts/SidebarContext";
 
 const navItems = [
   { href: "/", label: "仪表盘", icon: LayoutDashboard },
-  { href: "/moat-scanner", label: "护城河扫描", icon: ShieldCheck },
   { href: "/signals", label: "交易信号", icon: Radio },
   { href: "/portfolio", label: "持仓管理", icon: Briefcase },
   { href: "/settings", label: "系统设置", icon: Settings },
