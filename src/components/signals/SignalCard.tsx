@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, TrendingUp, Zap, Clock, Target, ArrowUpRight, ArrowDownRight, Check, X, Loader2 } from "lucide-react";
+import { Building2, TrendingUp, Zap, PieChart, Clock, Target, ArrowUpRight, ArrowDownRight, Check, X, Loader2 } from "lucide-react";
 import { TradingSignal, STRATEGY_CONFIG, ACTION_CONFIG, SIGNAL_TYPE_CONFIG, DECISION_CONFIG } from "@/types/signals";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { STRATEGY_GLOSSARY, SIGNAL_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
 import { signalsApi } from "@/lib/api";
 
 interface SignalCardProps {
@@ -12,7 +14,8 @@ interface SignalCardProps {
   onDecisionChange?: (signal: TradingSignal) => void;
 }
 
-const StrategyIcons = {
+const StrategyIcons: Record<string, typeof Building2> = {
+  index: PieChart,
   long: Building2,
   mid: TrendingUp,
   short: Zap,
@@ -92,9 +95,12 @@ export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProp
             )}
           </div>
         </div>
-        <StatusBadge variant={actionConfig.variant}>
-          {actionConfig.label}
-        </StatusBadge>
+        <div className="flex items-center gap-1">
+          <StatusBadge variant={actionConfig.variant}>
+            {actionConfig.label}
+          </StatusBadge>
+          <InfoTooltip entry={SIGNAL_GLOSSARY.signalColumn} />
+        </div>
       </div>
 
       {/* Signal Type & Strategy */}
@@ -105,6 +111,11 @@ export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProp
             {strategyConfig.label}
           </span>
         </div>
+        {(() => {
+          const stratGlossaryKey = signal.strategy === "index" ? "base" : signal.strategy === "long" ? "core" : signal.strategy === "mid" ? "flow" : "swing";
+          const entry = STRATEGY_GLOSSARY[stratGlossaryKey];
+          return entry ? <InfoTooltip entry={entry} /> : null;
+        })()}
         <span className={`text-sm font-medium ${signalTypeConfig?.color || 'text-stripe-ink'}`}>
           {signalTypeConfig?.label || signal.signal_type}
         </span>
@@ -142,9 +153,15 @@ export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProp
       {/* Reasons */}
       {signal.reasons.length > 0 && (
         <div className="text-xs text-stripe-ink-lighter mb-3">
-          {signal.reasons.slice(0, 2).map((reason, i) => (
-            <p key={i} className="truncate">• {reason}</p>
-          ))}
+          {signal.reasons.slice(0, 2).map((reason, i) => {
+            const reasonEntry = matchIndicatorGlossary(reason);
+            return (
+              <div key={i} className="flex items-center gap-0.5">
+                <p className="truncate">• {reason}</p>
+                {reasonEntry && <InfoTooltip entry={reasonEntry} />}
+              </div>
+            );
+          })}
         </div>
       )}
 

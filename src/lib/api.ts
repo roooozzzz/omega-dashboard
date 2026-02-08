@@ -408,10 +408,11 @@ export interface TradingSignal {
   ticker: string;
   name: string;
   type: "buy" | "sell" | "watch" | "alert";
-  strategy: "long" | "mid" | "short";
+  strategy: "index" | "long" | "mid" | "short";
   indicator: string;
   indicatorValue: string;
   reason: string;
+  reasons: string[];
   price: number;
   targetPrice?: number;
   stopLoss?: number;
@@ -428,6 +429,7 @@ export interface SignalStats {
   total: number;
   active: number;
   byStrategy: {
+    index: number;
     long: number;
     mid: number;
     short: number;
@@ -457,7 +459,7 @@ export interface SignalStatsResponse {
 
 export interface SignalFilters {
   limit?: number;
-  strategy?: "long" | "mid" | "short";
+  strategy?: "index" | "long" | "mid" | "short";
   ticker?: string;
   action?: string;
   status?: "active" | "executed" | "expired" | "cancelled";
@@ -479,7 +481,7 @@ interface TradingSignalRaw {
   id: string;
   ticker: string;
   name: string | null;
-  strategy: "long" | "mid" | "short";
+  strategy: "index" | "long" | "mid" | "short";
   signalType: string;
   score: number;
   triggeredAt: string;
@@ -520,6 +522,9 @@ const ACTION_TO_TYPE: Record<string, TradingSignal["type"]> = {
 };
 
 function mapTradingSignal(raw: TradingSignalRaw): TradingSignal {
+  // 保留原始 reasons 数组，便于前端分行展示
+  const reasons = raw.reasons.length > 0 ? raw.reasons : [raw.signalType];
+
   return {
     id: raw.id,
     ticker: raw.ticker,
@@ -528,7 +533,8 @@ function mapTradingSignal(raw: TradingSignalRaw): TradingSignal {
     strategy: raw.strategy,
     indicator: raw.signalType,
     indicatorValue: `${raw.score}/100`,
-    reason: raw.reasons.join("; ") || raw.signalType,
+    reason: reasons.join("; "),
+    reasons,
     price: raw.price ?? 0,
     triggeredAt: raw.triggeredAt,
     status: raw.userDecision === "confirmed" ? "executed"
@@ -545,6 +551,7 @@ function mapSignalStats(raw: SignalStatsRaw): SignalStats {
     total: raw.total ?? 0,
     active: raw.today ?? 0,
     byStrategy: {
+      index: raw.byStrategy?.index ?? 0,
       long: raw.byStrategy?.long ?? 0,
       mid: raw.byStrategy?.mid ?? 0,
       short: raw.byStrategy?.short ?? 0,
@@ -674,10 +681,49 @@ export function createSignalWebSocket(
   return { connect, disconnect };
 }
 
+// ============ 指数策略 ============
+export interface IndexETFData {
+  symbol: string;
+  name: string;
+  indexTracked: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  pe: number;
+  pe5yAvg: number;
+  dividendYield: number;
+  ma200: number;
+  aboveMa200: boolean;
+  rsi14: number;
+  expenseRatio: number;
+  healthStatus: "healthy" | "watch" | "caution";
+  updatedAt: string;
+}
+
+export interface IndexWatchlistResponse {
+  etfs: IndexETFData[];
+  updatedAt: string;
+}
+
+export interface IndexOverviewResponse {
+  totalEtfs: number;
+  dcaStreakWeeks: number;
+  valueSignals: number;
+  riskAlerts: number;
+}
+
+export const indexApi = {
+  getWatchlist: () => request<IndexWatchlistResponse>("/api/index/watchlist"),
+  getOverview: () => request<IndexOverviewResponse>("/api/index/overview"),
+  getDetail: (symbol: string) =>
+    request<IndexETFData>(`/api/index/detail/${encodeURIComponent(symbol)}`),
+};
+
 export default {
   market: marketApi,
   stock: stockApi,
   moat: moatApi,
   signals: signalsApi,
+  index: indexApi,
   createSignalWebSocket,
 };

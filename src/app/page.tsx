@@ -17,7 +17,7 @@ export default function Dashboard() {
       <MainContent>
         <Header
           title="仪表盘"
-          description="三层量化交易系统 — 人机协作模式"
+          description="四层量化交易系统 — 人机协作模式"
         />
         <div className="p-4 md:p-6 lg:p-8">
           {/* 同步状态 */}
@@ -26,7 +26,7 @@ export default function Dashboard() {
           {/* 市场状态 */}
           <MarketStatusBar />
 
-          {/* 三层策略面板 */}
+          {/* 四层策略面板 */}
           <StrategyPanel />
 
           {/* 护城河审批队列 */}

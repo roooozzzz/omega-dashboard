@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   signalsApi,
   createSignalWebSocket,
@@ -13,7 +13,7 @@ import {
 // ============ 获取信号列表 ============
 interface UseSignalsOptions {
   limit?: number;
-  strategy?: "long" | "mid" | "short";
+  strategy?: "index" | "long" | "mid" | "short";
   ticker?: string;
   action?: string;
   status?: "active" | "executed" | "expired" | "cancelled";
@@ -177,6 +177,30 @@ export function useMidTermSignals(options: Omit<UseSignalsOptions, "strategy"> =
 
 export function useShortTermSignals(options: Omit<UseSignalsOptions, "strategy"> = {}) {
   return useSignals({ ...options, strategy: "short" });
+}
+
+export function useIndexSignals(options: Omit<UseSignalsOptions, "strategy"> = {}) {
+  return useSignals({ ...options, strategy: "index" });
+}
+
+// ============ 跨策略信号共振映射 ============
+type StrategyKey = "index" | "long" | "mid" | "short";
+
+export function useCrossStrategyMap(currentStrategy?: StrategyKey) {
+  const { signals } = useSignals({ limit: 100, autoRefresh: true, refreshInterval: 60000 });
+
+  const crossMap = useMemo(() => {
+    const map: Record<string, Array<{ strategy: StrategyKey; indicator: string }>> = {};
+    for (const sig of signals) {
+      if (!map[sig.ticker]) map[sig.ticker] = [];
+      if (!map[sig.ticker].some(s => s.strategy === sig.strategy)) {
+        map[sig.ticker].push({ strategy: sig.strategy as StrategyKey, indicator: sig.indicator });
+      }
+    }
+    return map;
+  }, [signals]);
+
+  return crossMap;
 }
 
 export type { TradingSignal, SignalStats };

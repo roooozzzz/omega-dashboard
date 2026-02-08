@@ -6,20 +6,20 @@ import {
   Building2,
   TrendingUp,
   Zap,
+  PieChart,
   Loader2,
   Check,
   X,
   ChevronDown,
   ChevronUp,
-  Shield,
-  Users,
-  Cpu,
-  Scale,
-  Cog,
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { SIGNAL_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
+import { MoatPowersGrid } from "@/components/signals/MoatPowersGrid";
 import {
   Table,
   TableBody,
@@ -31,10 +31,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSignals, TradingSignal } from "@/hooks/useSignals";
 import { signalsApi, MoatData } from "@/lib/api";
-import type { LucideIcon } from "lucide-react";
 
 type SignalTypeDisplay = "买入" | "卖出" | "观望" | "预警";
-type StrategyType = "long" | "mid" | "short";
+type StrategyType = "index" | "long" | "mid" | "short";
 
 const signalConfig: Record<SignalTypeDisplay, { variant: "success" | "danger" | "neutral" | "warning" }> = {
   "买入": { variant: "success" },
@@ -47,6 +46,12 @@ const strategyConfig: Record<
   StrategyType,
   { label: string; icon: LucideIcon; color: string; bg: string }
 > = {
+  index: {
+    label: "指数",
+    icon: PieChart,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
   long: {
     label: "长线",
     icon: Building2,
@@ -65,16 +70,6 @@ const strategyConfig: Record<
     color: "text-stripe-warning",
     bg: "bg-stripe-warning-light",
   },
-};
-
-const powersIcons: Record<string, LucideIcon> = {
-  scaleEconomies: Scale,
-  networkEffects: Users,
-  counterPositioning: Zap,
-  switchingCosts: Building2,
-  branding: Shield,
-  corneredResource: Cpu,
-  processPower: Cog,
 };
 
 // 将 API 信号类型转换为显示类型
@@ -109,7 +104,7 @@ function formatTime(dateStr: string): string {
 }
 
 interface SignalsTableProps {
-  strategy?: "long" | "mid" | "short";
+  strategy?: "index" | "long" | "mid" | "short";
   ticker?: string;
   action?: string;
   limit?: number;
@@ -117,6 +112,7 @@ interface SignalsTableProps {
   onMoatApprove?: (ticker: string, adjustedScores?: Record<string, number>) => void;
   onMoatReject?: (ticker: string) => void;
   moatLoading?: boolean;
+  crossStrategyMap?: Record<string, Array<{ strategy: "index" | "long" | "mid" | "short"; indicator: string }>>;
 }
 
 function DecisionCell({ signal, onUpdate }: { signal: TradingSignal; onUpdate: () => void }) {
@@ -213,68 +209,33 @@ function MoatExpandedRow({
         <div className="text-sm font-medium text-stripe-ink">
           护城河评分:
           <span className="ml-2 text-lg font-semibold">
-            {isPending && hasChanges ? editedTotal : moat.totalScore}
+            {hasChanges ? editedTotal : moat.totalScore}
           </span>
           <span className="text-stripe-ink-lighter">/{moat.maxScore}</span>
-          {isPending && hasChanges && (
+          {hasChanges && (
             <span className="ml-2 text-xs text-stripe-purple">已调整</span>
           )}
         </div>
         {moat.sector && (
           <StatusBadge variant="neutral">{moat.sector}</StatusBadge>
         )}
+        {!isPending && (
+          <StatusBadge variant={moat.status === "verified" ? "success" : "danger"}>
+            {moat.status === "verified" ? "已通过" : "已拒绝"}
+          </StatusBadge>
+        )}
       </div>
 
       {/* Powers Grid */}
-      <div className="px-5 pb-3 grid grid-cols-4 md:grid-cols-7 gap-3">
-        {Object.entries(moat.powers).map(([key, power]) => {
-          const Icon = powersIcons[key] || Shield;
-          const currentScore = isPending
-            ? editedScores[key] ?? power.score
-            : power.score;
-          const percentage = (currentScore / power.maxScore) * 100;
-          return (
-            <div key={key} className="p-3 bg-white rounded-lg border border-stripe-border-light">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Icon className="w-3.5 h-3.5 text-stripe-ink-light" />
-                <span className="text-xs font-medium text-stripe-ink">
-                  {power.name}
-                </span>
-              </div>
-              {isPending ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={0}
-                    max={power.maxScore}
-                    step={1}
-                    value={currentScore}
-                    onChange={(e) =>
-                      setEditedScores((prev) => ({ ...prev, [key]: Number(e.target.value) }))
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                    className="omega-slider flex-1"
-                  />
-                  <span className="text-xs font-medium text-stripe-ink tabular-nums w-7 text-right">
-                    {currentScore}/{power.maxScore}
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-stripe-border rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-stripe-purple rounded-full"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-medium text-stripe-ink">
-                    {power.score}/{power.maxScore}
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="px-5 pb-3">
+        <MoatPowersGrid
+          powers={moat.powers}
+          editedScores={editedScores}
+          onScoreChange={(key, value) =>
+            setEditedScores((prev) => ({ ...prev, [key]: value }))
+          }
+          ticker={moat.ticker}
+        />
       </div>
 
       {/* AI Summary */}
@@ -291,51 +252,41 @@ function MoatExpandedRow({
         </div>
       )}
 
-      {/* Moat Actions (only for pending) */}
-      {isPending && (
-        <div className="px-5 pb-4 flex items-center justify-between">
-          <p className="text-xs text-stripe-ink-lighter">
-            分析时间: {new Date(moat.analyzedAt).toLocaleString("zh-CN")}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-stripe-border text-stripe-ink hover:bg-stripe-danger-light hover:text-stripe-danger-text hover:border-stripe-danger-light"
-              disabled={loading}
-              onClick={(e) => {
-                e.stopPropagation();
-                onReject?.(moat.ticker);
-              }}
-            >
-              <XCircle className="w-3.5 h-3.5" />
-              拒绝护城河
-            </Button>
-            <Button
-              size="sm"
-              className="bg-stripe-success text-white hover:bg-stripe-success/90"
-              disabled={loading}
-              onClick={(e) => {
-                e.stopPropagation();
-                const adjustedScores = hasChanges ? editedScores : undefined;
-                onApprove?.(moat.ticker, adjustedScores);
-              }}
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              确认护城河
-            </Button>
-          </div>
+      {/* Actions — always available */}
+      <div className="px-5 pb-4 flex items-center justify-between">
+        <p className="text-xs text-stripe-ink-lighter">
+          分析时间: {new Date(moat.analyzedAt).toLocaleString("zh-CN")}
+          {moat.reviewedAt && ` · 审核时间: ${new Date(moat.reviewedAt).toLocaleString("zh-CN")}`}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-stripe-border text-stripe-ink hover:bg-stripe-danger-light hover:text-stripe-danger-text hover:border-stripe-danger-light"
+            disabled={loading}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReject?.(moat.ticker);
+            }}
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            {isPending ? "拒绝护城河" : "重新拒绝"}
+          </Button>
+          <Button
+            size="sm"
+            className="bg-stripe-success text-white hover:bg-stripe-success/90"
+            disabled={loading}
+            onClick={(e) => {
+              e.stopPropagation();
+              const adjustedScores = hasChanges ? editedScores : undefined;
+              onApprove?.(moat.ticker, adjustedScores);
+            }}
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            {isPending ? "确认护城河" : hasChanges ? "重新审批" : "重新确认"}
+          </Button>
         </div>
-      )}
-
-      {/* Non-pending: show analysis time */}
-      {!isPending && (
-        <div className="px-5 pb-3">
-          <p className="text-xs text-stripe-ink-lighter">
-            分析时间: {new Date(moat.analyzedAt).toLocaleString("zh-CN")}
-          </p>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -349,6 +300,7 @@ export function SignalsTable({
   onMoatApprove,
   onMoatReject,
   moatLoading,
+  crossStrategyMap,
 }: SignalsTableProps) {
   const { signals, loading, error, refresh } = useSignals({
     strategy,
@@ -420,30 +372,36 @@ export function SignalsTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-stripe-border">
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                股票
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                信号
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                策略
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                指标
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                价格
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                触发时间
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                原因
-              </TableHead>
-              <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                决策
-              </TableHead>
+              <TableCell colSpan={8} className="p-0">
+                <div className="flex items-center px-4 py-2.5 min-w-[900px]">
+                  <div className="w-[160px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">股票</div>
+                  <div className="w-[70px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
+                    信号
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.signalColumn} />
+                  </div>
+                  <div className="w-[80px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
+                    策略
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.strategyColumn} />
+                  </div>
+                  <div className="w-[150px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
+                    指标
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.indicatorColumn} />
+                  </div>
+                  <div className="w-[110px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">价格</div>
+                  <div className="w-[100px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">触发时间</div>
+                  <div className="flex-1 min-w-[100px] text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
+                    原因
+                    <InfoTooltip entry={
+                      strategy === "index" ? SIGNAL_GLOSSARY.reasonColumnIndex
+                        : strategy === "long" ? SIGNAL_GLOSSARY.reasonColumnLong
+                        : strategy === "mid" ? SIGNAL_GLOSSARY.reasonColumnMid
+                        : strategy === "short" ? SIGNAL_GLOSSARY.reasonColumnShort
+                        : SIGNAL_GLOSSARY.reasonColumnLong
+                    } />
+                  </div>
+                  <div className="w-[140px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">决策</div>
+                </div>
+              </TableCell>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -464,51 +422,80 @@ export function SignalsTable({
                   <TableCell colSpan={8} className="p-0">
                     {/* Signal Row */}
                     <div
-                      className="flex items-center px-4 py-3"
+                      className="flex items-center px-4 py-3 min-w-[900px]"
                       onClick={canExpand ? () => toggleExpand(signal.id) : undefined}
                     >
                       {/* 股票 */}
-                      <div className="flex-1 min-w-[140px]">
+                      <div className="w-[160px] shrink-0">
                         <Link
                           href={`/stock/${encodeURIComponent(signal.ticker)}`}
                           className="flex items-center gap-3 group"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center shrink-0">
                             <span className="text-sm font-medium text-stripe-ink">
                               {signal.ticker[0]}
                             </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm text-stripe-ink group-hover:text-stripe-purple transition-colors">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-stripe-ink group-hover:text-stripe-purple transition-colors truncate">
                               {signal.ticker}
                             </p>
-                            <p className="text-xs text-stripe-ink-lighter">
+                            <p className="text-xs text-stripe-ink-lighter truncate">
                               {signal.name || signal.ticker}
                             </p>
+                            {(() => {
+                              const crossEntries = crossStrategyMap?.[signal.ticker]?.filter(
+                                (s) => s.strategy !== signal.strategy
+                              );
+                              if (!crossEntries || crossEntries.length === 0) return null;
+                              return (
+                                <p className="text-[11px] text-stripe-ink-lighter mt-0.5 truncate">
+                                  也在:{" "}
+                                  {crossEntries.map((entry, idx) => {
+                                    const route = `/signals/${entry.strategy}`;
+                                    const label = strategyConfig[entry.strategy]?.label || entry.strategy;
+                                    const color = strategyConfig[entry.strategy]?.color || "text-stripe-ink";
+                                    return (
+                                      <span key={entry.strategy}>
+                                        {idx > 0 && "、"}
+                                        <Link
+                                          href={route}
+                                          className={`${color} hover:underline font-medium`}
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {label}
+                                        </Link>
+                                        <span className="text-stripe-ink-lighter"> ({entry.indicator})</span>
+                                      </span>
+                                    );
+                                  })}
+                                </p>
+                              );
+                            })()}
                           </div>
                         </Link>
                       </div>
                       {/* 信号 */}
-                      <div className="w-[70px]">
+                      <div className="w-[70px] shrink-0">
                         <StatusBadge variant={signalConfig[signalDisplay].variant}>
                           {signalDisplay}
                         </StatusBadge>
                       </div>
                       {/* 策略 */}
-                      <div className="w-[80px]">
+                      <div className="w-[80px] shrink-0">
                         <div
                           className={`inline-flex items-center gap-1.5 px-2 py-1 rounded ${
                             strategyConfig[signal.strategy]?.bg || "bg-stripe-bg"
                           }`}
                         >
                           <StratIcon
-                            className={`w-3.5 h-3.5 ${
+                            className={`w-3.5 h-3.5 shrink-0 ${
                               strategyConfig[signal.strategy]?.color || "text-stripe-ink"
                             }`}
                           />
                           <span
-                            className={`text-xs font-medium ${
+                            className={`text-xs font-medium whitespace-nowrap ${
                               strategyConfig[signal.strategy]?.color || "text-stripe-ink"
                             }`}
                           >
@@ -517,36 +504,56 @@ export function SignalsTable({
                         </div>
                       </div>
                       {/* 指标 */}
-                      <div className="w-[130px]">
-                        <span className="text-sm text-stripe-ink">
-                          {signal.indicator}: {signal.indicatorValue}
-                        </span>
+                      <div className="w-[150px] shrink-0">
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-sm text-stripe-ink truncate">
+                            {signal.indicator}: {signal.indicatorValue}
+                          </span>
+                          {(() => {
+                            const entry = matchIndicatorGlossary(signal.indicator || "");
+                            return entry ? <InfoTooltip entry={entry} /> : null;
+                          })()}
+                        </div>
                       </div>
                       {/* 价格 */}
-                      <div className="w-[100px]">
-                        <p className="text-sm font-medium text-stripe-ink">
+                      <div className="w-[110px] shrink-0">
+                        <p className="text-sm font-medium text-stripe-ink whitespace-nowrap">
                           ${signal.price?.toFixed(2) || "-"}
                         </p>
                         {signal.targetPrice && (
-                          <p className="text-xs text-stripe-ink-lighter">
+                          <p className="text-xs text-stripe-ink-lighter whitespace-nowrap">
                             目标: ${signal.targetPrice.toFixed(2)}
                           </p>
                         )}
                       </div>
                       {/* 触发时间 */}
-                      <div className="w-[100px]">
-                        <span className="text-sm text-stripe-ink-lighter">
+                      <div className="w-[100px] shrink-0">
+                        <span className="text-sm text-stripe-ink-lighter whitespace-nowrap">
                           {formatTime(signal.triggeredAt)}
                         </span>
                       </div>
                       {/* 原因 */}
-                      <div className="flex-1 min-w-[120px]">
-                        <p className="text-sm text-stripe-ink-lighter max-w-xs truncate">
-                          {signal.reason}
-                        </p>
+                      <div className="flex-1 min-w-[100px]">
+                        {signal.reasons && signal.reasons.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {signal.reasons.map((r, i) => {
+                              const reasonEntry = matchIndicatorGlossary(r);
+                              return (
+                                <div key={i} className="flex items-center gap-0.5">
+                                  <p className={`text-xs leading-snug ${i === 0 ? "text-stripe-ink font-medium" : "text-stripe-ink-lighter"}`}>
+                                    {r}
+                                  </p>
+                                  {reasonEntry && <InfoTooltip entry={reasonEntry} />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-stripe-ink-lighter">—</p>
+                        )}
                       </div>
                       {/* 决策 + 展开箭头 */}
-                      <div className="w-[140px] flex items-center gap-2">
+                      <div className="w-[140px] shrink-0 flex items-center gap-2">
                         <DecisionCell signal={signal} onUpdate={refresh} />
                         {canExpand && (
                           <button className="p-1 hover:bg-stripe-bg rounded transition-colors">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, TrendingUp, Zap, Clock, Check, X, Filter } from "lucide-react";
+import { Building2, TrendingUp, Zap, PieChart, Clock, Check, X, Filter } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useSignals } from "@/hooks/useSignals";
 import type { LucideIcon } from "lucide-react";
@@ -9,6 +9,7 @@ import type { LucideIcon } from "lucide-react";
 type DecisionFilter = "all" | "confirmed" | "ignored";
 
 const strategyConfig: Record<string, { label: string; icon: LucideIcon; color: string; bg: string }> = {
+  index: { label: "指数", icon: PieChart, color: "text-blue-600", bg: "bg-blue-50" },
   long: { label: "长线", icon: Building2, color: "text-stripe-ink", bg: "bg-stripe-bg" },
   mid: { label: "中线", icon: TrendingUp, color: "text-stripe-purple", bg: "bg-indigo-50" },
   short: { label: "短线", icon: Zap, color: "text-stripe-warning", bg: "bg-stripe-warning-light" },
@@ -29,7 +30,7 @@ function formatTime(dateStr: string): string {
 }
 
 interface DecisionHistoryProps {
-  strategy?: "long" | "mid" | "short";
+  strategy?: "index" | "long" | "mid" | "short";
 }
 
 export function DecisionHistory({ strategy }: DecisionHistoryProps = {}) {
@@ -94,7 +95,7 @@ export function DecisionHistory({ strategy }: DecisionHistoryProps = {}) {
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <p className="text-stripe-ink-lighter">暂无决策记录</p>
           <p className="text-sm text-stripe-ink-lighter mt-1">
-            对{strategy === "long" ? "长线" : strategy === "mid" ? "中线" : strategy === "short" ? "短线" : ""}信号做出确认或忽略后，记录将显示在此处
+            对{strategy === "index" ? "指数" : strategy === "long" ? "长线" : strategy === "mid" ? "中线" : strategy === "short" ? "短线" : ""}信号做出确认或忽略后，记录将显示在此处
           </p>
         </div>
       ) : (
@@ -111,44 +112,44 @@ export function DecisionHistory({ strategy }: DecisionHistoryProps = {}) {
             return (
               <div
                 key={signal.id}
-                className="px-5 py-4 flex items-center justify-between hover:bg-stripe-bg transition-colors"
+                className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stripe-bg transition-colors"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-stripe-bg flex items-center justify-center">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-stripe-bg flex items-center justify-center shrink-0">
                     <span className="text-sm font-bold text-stripe-ink">
                       {signal.ticker.slice(0, 2)}
                     </span>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-stripe-ink">
                         {signal.ticker}
                       </span>
                       {signal.name && (
-                        <span className="text-xs text-stripe-ink-lighter">{signal.name}</span>
+                        <span className="text-xs text-stripe-ink-lighter truncate">{signal.name}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${config?.bg || "bg-stripe-bg"}`}>
-                        <StratIcon className={`w-3 h-3 ${config?.color || "text-stripe-ink"}`} />
-                        <span className={`text-xs ${config?.color || "text-stripe-ink"}`}>
+                        <StratIcon className={`w-3 h-3 shrink-0 ${config?.color || "text-stripe-ink"}`} />
+                        <span className={`text-xs whitespace-nowrap ${config?.color || "text-stripe-ink"}`}>
                           {config?.label || signal.strategy}
                         </span>
                       </div>
                       {signal.price && (
-                        <span className="text-xs text-stripe-ink-lighter">
+                        <span className="text-xs text-stripe-ink-lighter whitespace-nowrap">
                           ${signal.price.toFixed(2)}
                         </span>
                       )}
                       {notes && (
-                        <span className="text-xs text-stripe-ink-lighter italic">
+                        <span className="text-xs text-stripe-ink-lighter italic truncate max-w-[200px]">
                           &quot;{notes}&quot;
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0 sm:ml-auto pl-14 sm:pl-0">
                   <StatusBadge variant={decision === "confirmed" ? "success" : "neutral"}>
                     {decision === "confirmed" ? (
                       <span className="inline-flex items-center gap-1">
@@ -163,8 +164,8 @@ export function DecisionHistory({ strategy }: DecisionHistoryProps = {}) {
                     )}
                   </StatusBadge>
                   {decisionTime && (
-                    <span className="text-xs text-stripe-ink-lighter flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                    <span className="text-xs text-stripe-ink-lighter flex items-center gap-1 whitespace-nowrap">
+                      <Clock className="w-3 h-3 shrink-0" />
                       {formatTime(decisionTime)}
                     </span>
                   )}

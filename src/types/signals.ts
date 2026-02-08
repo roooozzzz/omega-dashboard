@@ -1,13 +1,14 @@
 // 信号类型定义
 
-export type StrategyType = "long" | "mid" | "short";
+export type StrategyType = "index" | "long" | "mid" | "short";
 export type ActionType = "BUY" | "SELL" | "HOLD" | "WATCH";
 
 export type LongSignalType = "STRONG_BUY" | "HOLD" | "SELL";
 export type MidSignalType = "POCKET_PIVOT" | "VCP_BREAKOUT" | "TREND_FOLLOW";
 export type ShortSignalType = "OVERSOLD_T1" | "OVERSOLD_T2" | "BOUNCE";
+export type IndexSignalType = "INDEX_DCA" | "INDEX_VALUE" | "INDEX_RISK";
 
-export type SignalType = LongSignalType | MidSignalType | ShortSignalType;
+export type SignalType = LongSignalType | MidSignalType | ShortSignalType | IndexSignalType;
 
 export type UserDecision = "confirmed" | "ignored" | "pending";
 
@@ -34,6 +35,7 @@ export interface SignalStats {
   total: number;
   today: number;
   by_strategy: {
+    index?: number;
     long?: number;
     mid?: number;
     short?: number;
@@ -60,6 +62,10 @@ export const DECISION_CONFIG: Record<UserDecision, { label: string; variant: "su
 
 // 信号类型配置
 export const SIGNAL_TYPE_CONFIG: Record<SignalType, { label: string; color: string }> = {
+  // 指数
+  INDEX_DCA: { label: "定投提醒", color: "text-blue-600" },
+  INDEX_VALUE: { label: "估值买入", color: "text-blue-600" },
+  INDEX_RISK: { label: "风险预警", color: "text-red-500" },
   // 长线
   STRONG_BUY: { label: "强力买入", color: "text-stripe-success" },
   HOLD: { label: "持有", color: "text-stripe-ink-lighter" },
@@ -82,6 +88,7 @@ export const ACTION_CONFIG: Record<ActionType, { label: string; variant: "succes
 };
 
 export const STRATEGY_CONFIG: Record<StrategyType, { label: string; color: string; bg: string }> = {
+  index: { label: "指数", color: "text-blue-600", bg: "bg-blue-50" },
   long: { label: "长线", color: "text-stripe-ink", bg: "bg-stripe-bg" },
   mid: { label: "中线", color: "text-stripe-purple", bg: "bg-indigo-50" },
   short: { label: "短线", color: "text-stripe-warning", bg: "bg-stripe-warning-light" },

@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, TrendingUp, Zap, ChevronRight, ExternalLink } from "lucide-react";
+import { Building2, TrendingUp, Zap, PieChart, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { STRATEGY_GLOSSARY } from "@/lib/glossary";
 import {
   useLongTermSignals,
   useMidTermSignals,
   useShortTermSignals,
+  useIndexSignals,
 } from "@/hooks/useSignals";
 
 interface Stock {
@@ -28,6 +31,7 @@ interface Strategy {
   stocks: Stock[];
   loading: boolean;
   href: string;
+  glossaryKey: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,7 +69,12 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
               {strategy.icon}
             </div>
             <div>
-              <h3 className="font-semibold text-stripe-ink">{strategy.name}</h3>
+              <div className="flex items-center gap-1">
+                <h3 className="font-semibold text-stripe-ink">{strategy.name}</h3>
+                {STRATEGY_GLOSSARY[strategy.glossaryKey] && (
+                  <InfoTooltip entry={STRATEGY_GLOSSARY[strategy.glossaryKey]} />
+                )}
+              </div>
               <p className="text-xs text-stripe-ink-lighter">
                 {strategy.subtitle}
               </p>
@@ -141,48 +150,64 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
 }
 
 export function StrategyPanel() {
+  const { signals: indexSignals, loading: indexLoading } = useIndexSignals({ limit: 4 });
   const { signals: longSignals, loading: longLoading } = useLongTermSignals({ limit: 4 });
   const { signals: midSignals, loading: midLoading } = useMidTermSignals({ limit: 4 });
   const { signals: shortSignals, loading: shortLoading } = useShortTermSignals({ limit: 4 });
 
   const strategies: Strategy[] = [
     {
+      id: "base",
+      name: "指数 · THE BASE",
+      subtitle: "建「底」— 指数定投",
+      allocation: 35,
+      icon: <PieChart className="w-5 h-5" />,
+      color: "bg-blue-600",
+      stocks: indexSignals.map(signalToStock),
+      loading: indexLoading,
+      href: "/signals/index",
+      glossaryKey: "base",
+    },
+    {
       id: "core",
-      name: "长线 \u00B7 THE CORE",
-      subtitle: "选「质」\u2014 护城河筛选",
-      allocation: 50,
+      name: "长线 · THE CORE",
+      subtitle: "选「质」— 护城河筛选",
+      allocation: 30,
       icon: <Building2 className="w-5 h-5" />,
       color: "bg-stripe-ink",
       stocks: longSignals.map(signalToStock),
       loading: longLoading,
       href: "/signals/long",
+      glossaryKey: "core",
     },
     {
       id: "flow",
-      name: "中线 \u00B7 THE FLOW",
-      subtitle: "借「势」\u2014 动量跟踪",
-      allocation: 30,
+      name: "中线 · THE FLOW",
+      subtitle: "借「势」— 动量跟踪",
+      allocation: 20,
       icon: <TrendingUp className="w-5 h-5" />,
       color: "bg-stripe-purple",
       stocks: midSignals.map(signalToStock),
       loading: midLoading,
       href: "/signals/mid",
+      glossaryKey: "flow",
     },
     {
       id: "swing",
-      name: "短线 \u00B7 THE SWING",
-      subtitle: "找「位」\u2014 情绪捕捉",
-      allocation: 20,
+      name: "短线 · THE SWING",
+      subtitle: "找「位」— 情绪捕捉",
+      allocation: 15,
       icon: <Zap className="w-5 h-5" />,
       color: "bg-stripe-warning",
       stocks: shortSignals.map(signalToStock),
       loading: shortLoading,
       href: "/signals/short",
+      glossaryKey: "swing",
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {strategies.map((strategy) => (
         <StrategyCard key={strategy.id} strategy={strategy} />
       ))}

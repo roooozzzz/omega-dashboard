@@ -16,9 +16,12 @@ import {
   Building2,
   TrendingUp,
   Zap,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/Logo";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { MARKET_GLOSSARY } from "@/lib/glossary";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 interface NavItem {
@@ -35,6 +38,7 @@ const navItems: NavItem[] = [
     label: "交易信号",
     icon: Radio,
     children: [
+      { href: "/signals/index", label: "指数 · THE BASE", icon: PieChart },
       { href: "/signals/long", label: "长线 · THE CORE", icon: Building2 },
       { href: "/signals/mid", label: "中线 · THE FLOW", icon: TrendingUp },
       { href: "/signals/short", label: "短线 · THE SWING", icon: Zap },
@@ -203,9 +207,12 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             )}
           </div>
           {(!isCollapsed || isMobile) && (
-            <p className="text-xs text-stripe-success-text dark:text-emerald-400/70 mt-1 opacity-80">
-              熔断器: 关闭
-            </p>
+            <div className="flex items-center gap-1 mt-1">
+              <p className="text-xs text-stripe-success-text dark:text-emerald-400/70 opacity-80">
+                熔断器: 关闭
+              </p>
+              <InfoTooltip entry={MARKET_GLOSSARY.circuitBreaker} />
+            </div>
           )}
         </div>
       </div>

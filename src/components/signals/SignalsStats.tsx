@@ -28,7 +28,7 @@ export function SignalsStats({ onSignalReceived }: SignalsStatsProps) {
   const defaultStats: SignalStats = {
     total: 0,
     active: 0,
-    byStrategy: { long: 0, mid: 0, short: 0 },
+    byStrategy: { index: 0, long: 0, mid: 0, short: 0 },
     byType: { buy: 0, sell: 0, watch: 0, alert: 0 },
   };
 
