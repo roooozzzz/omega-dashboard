@@ -184,7 +184,7 @@ The API client maps backend snake_case/CamelModel responses to frontend TypeScri
 - `mapSignalStats()`: raw SignalStatsRaw -> SignalStats
 - `createSignalWebSocket()`: WebSocket with auto-reconnect (3s interval)
 - `newsApi`: `getStockNews(symbol)`, `getMoatFeed(symbol)` — news list + moat news feed
-- `indexApi`: `getWatchlist()`, `getOverview()`, `getDetail(symbol)` — index strategy (currently mock data)
+- `indexApi`: `getWatchlist()`, `getOverview()`, `getDetail(symbol)` — index strategy (mock data fallback when backend unavailable)
 
 ## Development
 
@@ -212,7 +212,7 @@ Backend must be running at `localhost:8000` (or set `NEXT_PUBLIC_API_URL`).
 
 ### Completed
 - Four-strategy independent pages (/signals/index, /signals/long, /signals/mid, /signals/short)
-- Index strategy THE BASE — ETF watchlist (VOO, QQQ, VTI, SCHD) with IndexWatchlistPanel (frontend mock data)
+- Index strategy THE BASE — ETF watchlist (VOO, QQQ, VTI, SCHD) with IndexWatchlistPanel + backend API (`/api/index/watchlist`, `/api/index/overview`, `/api/index/detail/{symbol}`)
 - Moat approval integrated into long-term strategy page (with interactive score sliders)
 - FMP + Finnhub data source migration (from yfinance)
 - Sentiment Gate (news sentiment filtering)
@@ -227,11 +227,10 @@ Backend must be running at `localhost:8000` (or set `NEXT_PUBLIC_API_URL`).
 - NotificationBell for moat proposal alerts
 - InfoTooltip financial glossary across all pages
 - Client-side strategy filtering in useSignals
+- Index strategy signal engine (INDEX_DCA weekly DCA, INDEX_VALUE valuation buy, INDEX_RISK risk alert) in scanner.py
+- Backend cloud deployment: Railway (backend) + Vercel (frontend)
+- OpenClaw API 地址切换到云端（Railway + Vercel）
 
 ### In Progress / TODO
 1. Frontend settings page: wire up to backend GET/PUT /api/settings
-2. Index strategy backend API (`/api/index/watchlist`, `/api/index/overview`, `/api/index/detail/{symbol}` — frontend currently uses mock data)
-3. Index strategy signal engine (INDEX_DCA, INDEX_VALUE, INDEX_RISK)
-4. Portfolio page: manual position tracking, later IBKR API integration
-5. Backend cloud deployment (Docker ready)
-6. OpenClaw Cron jobs: switch from localhost:8000 to cloud API URL
+2. Portfolio page: manual position tracking, later IBKR API integration
