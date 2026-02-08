@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GlossaryEntry, BenchmarkStatus } from "@/lib/glossary";
 
@@ -32,6 +32,8 @@ const statusColors: Record<BenchmarkStatus, { bg: string; text: string; dot: str
 const POPOVER_WIDTH = 288; // w-72 = 18rem = 288px
 const GAP = 6;
 const VIEWPORT_PADDING = 8;
+const HOVER_DELAY = 150; // ms 延迟，避免闪烁
+const LEAVE_DELAY = 200; // ms 离开延迟，方便移动到浮层
 
 interface InfoTooltipProps {
   entry: GlossaryEntry;
@@ -43,6 +45,8 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   // 计算浮层位置（fixed 定位，基于按钮在视口中的位置）
@@ -66,10 +70,33 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
     setPosition({ top, left });
   }, []);
 
+  const handleEnter = useCallback(() => {
+    if (leaveTimer.current) {
+      clearTimeout(leaveTimer.current);
+      leaveTimer.current = null;
+    }
+    enterTimer.current = setTimeout(() => setOpen(true), HOVER_DELAY);
+  }, []);
+
+  const handleLeave = useCallback(() => {
+    if (enterTimer.current) {
+      clearTimeout(enterTimer.current);
+      enterTimer.current = null;
+    }
+    leaveTimer.current = setTimeout(() => setOpen(false), LEAVE_DELAY);
+  }, []);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (enterTimer.current) clearTimeout(enterTimer.current);
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    };
+  }, []);
+
   // 打开时计算位置
   useEffect(() => {
     if (!open) return;
-    // 等 DOM 渲染后计算
     requestAnimationFrame(updatePosition);
   }, [open, updatePosition]);
 
@@ -83,23 +110,6 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
       window.removeEventListener("resize", updatePosition);
     };
   }, [open, updatePosition]);
-
-  // 点击外部关闭
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(e: MouseEvent) {
-      const target = e.target as Node;
-      if (
-        buttonRef.current?.contains(target) ||
-        popoverRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
 
   // Escape 关闭
   useEffect(() => {
@@ -118,10 +128,8 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
       <button
         ref={buttonRef}
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
         className={cn(
           "inline-flex items-center justify-center rounded-full text-stripe-ink-lighter hover:text-stripe-purple transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-stripe-purple/30",
           className
@@ -136,20 +144,15 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
           ref={popoverRef}
           className="fixed z-[9999] w-72 bg-white dark:bg-[#16161D] rounded-lg border border-stripe-border dark:border-[#2A2A35] shadow-[var(--shadow-omega-md)]"
           style={{ top: position.top, left: position.left }}
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <div className="px-4 pt-3 pb-2">
             <h4 className="text-sm font-semibold text-stripe-ink dark:text-white">
               {entry.term}
             </h4>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="p-0.5 rounded hover:bg-stripe-bg dark:hover:bg-white/5 transition-colors"
-            >
-              <X className="w-3.5 h-3.5 text-stripe-ink-lighter" />
-            </button>
           </div>
 
           {/* Definition */}
@@ -200,7 +203,7 @@ export function InfoTooltip({ entry, className, iconSize = "sm" }: InfoTooltipPr
             <div className="px-4 pb-3">
               <div className="p-2.5 rounded-md bg-stripe-info-light dark:bg-blue-500/10">
                 <p className="text-xs text-stripe-info-text dark:text-blue-400 leading-relaxed">
-                  💡 {entry.tip}
+                  {entry.tip}
                 </p>
               </div>
             </div>
