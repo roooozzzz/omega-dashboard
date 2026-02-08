@@ -19,6 +19,8 @@ import {
 import { OHLCData } from "./CandlestickChart";
 import { VolumeData } from "./VolumeChart";
 
+export type SubPanel = "volume" | "rsi" | "macd" | "none";
+
 interface TechnicalChartProps {
   data: OHLCData[];
   volumeData?: VolumeData[];
@@ -29,15 +31,18 @@ interface TechnicalChartProps {
   showBollinger?: boolean;
   bollingerLength?: number;
   bollingerStdDev?: number;
-  showVolume?: boolean;
+  subPanel?: SubPanel;
   onCrosshairMove?: (data: {
     candle: OHLCData | null;
     ma?: Record<number, number | null>;
     bollinger?: { upper: number | null; middle: number | null; lower: number | null };
+    rsi?: number | null;
+    macd?: { macd: number | null; signal: number | null; histogram: number | null };
   }) => void;
 }
 
-// Calculate Simple Moving Average
+// ============ 计算函数 ============
+
 function calculateSMA(data: number[], length: number): (number | null)[] {
   const result: (number | null)[] = [];
   for (let i = 0; i < data.length; i++) {
@@ -54,7 +59,6 @@ function calculateSMA(data: number[], length: number): (number | null)[] {
   return result;
 }
 
-// Calculate Standard Deviation
 function calculateStdDev(data: number[], length: number, ma: (number | null)[]): (number | null)[] {
   const result: (number | null)[] = [];
   for (let i = 0; i < data.length; i++) {
@@ -71,17 +75,111 @@ function calculateStdDev(data: number[], length: number, ma: (number | null)[]):
   return result;
 }
 
+// RSI — Wilder's Smoothing
+function calculateRSI(closes: number[], period: number = 14): (number | null)[] {
+  if (closes.length < period + 1) return closes.map(() => null);
+
+  const result: (number | null)[] = [null]; // 第一个值无涨跌
+
+  const changes: number[] = [];
+  for (let i = 1; i < closes.length; i++) {
+    changes.push(closes[i] - closes[i - 1]);
+  }
+
+  let avgGain = 0, avgLoss = 0;
+  for (let i = 0; i < period; i++) {
+    if (changes[i] >= 0) avgGain += changes[i];
+    else avgLoss += Math.abs(changes[i]);
+  }
+  avgGain /= period;
+  avgLoss /= period;
+
+  // 前 period-1 个无值
+  for (let i = 0; i < period - 1; i++) result.push(null);
+
+  // 第一个 RSI
+  result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss));
+
+  // 后续 Wilder 平滑
+  for (let i = period; i < changes.length; i++) {
+    const gain = changes[i] >= 0 ? changes[i] : 0;
+    const loss = changes[i] < 0 ? Math.abs(changes[i]) : 0;
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss));
+  }
+
+  return result;
+}
+
+// EMA
+function calculateEMA(data: number[], period: number): number[] {
+  const k = 2 / (period + 1);
+  const result: number[] = [data[0]];
+  for (let i = 1; i < data.length; i++) {
+    result.push(data[i] * k + result[i - 1] * (1 - k));
+  }
+  return result;
+}
+
+// MACD (12, 26, 9)
+function calculateMACD(closes: number[], fast = 12, slow = 26, signal = 9) {
+  if (closes.length < slow) {
+    return {
+      macd: closes.map(() => null as number | null),
+      signal: closes.map(() => null as number | null),
+      histogram: closes.map(() => null as number | null),
+    };
+  }
+
+  const emaFast = calculateEMA(closes, fast);
+  const emaSlow = calculateEMA(closes, slow);
+
+  const macdLine: (number | null)[] = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < slow - 1) macdLine.push(null);
+    else macdLine.push(emaFast[i] - emaSlow[i]);
+  }
+
+  // Signal = EMA of MACD line (只取有效值)
+  const validMacd = macdLine.filter((v): v is number => v !== null);
+  const signalEma = calculateEMA(validMacd, signal);
+
+  const signalLine: (number | null)[] = [];
+  const histogramLine: (number | null)[] = [];
+  let validIdx = 0;
+  for (let i = 0; i < closes.length; i++) {
+    if (macdLine[i] === null) {
+      signalLine.push(null);
+      histogramLine.push(null);
+    } else {
+      if (validIdx < signal - 1) {
+        signalLine.push(null);
+        histogramLine.push(null);
+      } else {
+        signalLine.push(signalEma[validIdx]);
+        histogramLine.push(macdLine[i]! - signalEma[validIdx]);
+      }
+      validIdx++;
+    }
+  }
+
+  return { macd: macdLine, signal: signalLine, histogram: histogramLine };
+}
+
+// ============ 组件 ============
+
 export function TechnicalChart({
   data,
   volumeData,
   height = 500,
   theme = "light",
   showMA = true,
-  maLengths = [5, 20, 60],
+  maLengths = [20, 50, 200],
   showBollinger = true,
   bollingerLength = 20,
   bollingerStdDev = 2,
-  showVolume = true,
+  subPanel = "volume",
   onCrosshairMove,
 }: TechnicalChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +192,10 @@ export function TechnicalChart({
     middle: ISeriesApi<"Line"> | null;
     lower: ISeriesApi<"Line"> | null;
   }>({ upper: null, middle: null, lower: null });
+  const rsiSeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdLineRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdHistRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
   const colors = {
     light: {
@@ -108,10 +210,17 @@ export function TechnicalChart({
       wickDownColor: "#DF1B41",
       volumeUp: "rgba(48, 177, 113, 0.3)",
       volumeDown: "rgba(223, 27, 65, 0.3)",
-      ma: ["#635BFF", "#FF9500", "#00C7BE"],
+      ma: ["#FF9500", "#635BFF", "#00C7BE"],
       bollingerUpper: "rgba(99, 91, 255, 0.6)",
       bollingerMiddle: "rgba(99, 91, 255, 0.8)",
       bollingerLower: "rgba(99, 91, 255, 0.6)",
+      rsiLine: "#635BFF",
+      rsiOverbought: "rgba(223, 27, 65, 0.4)",
+      rsiOversold: "rgba(48, 177, 113, 0.4)",
+      macdLine: "#635BFF",
+      macdSignal: "#FF9500",
+      macdHistUp: "rgba(48, 177, 113, 0.6)",
+      macdHistDown: "rgba(223, 27, 65, 0.6)",
     },
     dark: {
       background: "#0A2540",
@@ -125,10 +234,17 @@ export function TechnicalChart({
       wickDownColor: "#DF1B41",
       volumeUp: "rgba(48, 177, 113, 0.4)",
       volumeDown: "rgba(223, 27, 65, 0.4)",
-      ma: ["#818CF8", "#FFB84D", "#5EEAD4"],
+      ma: ["#FFB84D", "#818CF8", "#5EEAD4"],
       bollingerUpper: "rgba(129, 140, 248, 0.6)",
       bollingerMiddle: "rgba(129, 140, 248, 0.8)",
       bollingerLower: "rgba(129, 140, 248, 0.6)",
+      rsiLine: "#818CF8",
+      rsiOverbought: "rgba(223, 27, 65, 0.5)",
+      rsiOversold: "rgba(48, 177, 113, 0.5)",
+      macdLine: "#818CF8",
+      macdSignal: "#FFB84D",
+      macdHistUp: "rgba(48, 177, 113, 0.5)",
+      macdHistDown: "rgba(223, 27, 65, 0.5)",
     },
   };
 
@@ -165,14 +281,14 @@ export function TechnicalChart({
     [currentColors]
   );
 
-  // Calculate technical indicators
+  // 计算所有技术指标
   const indicators = useMemo(() => {
     const closes = data.map((d) => d.close);
     const times = data.map((d) =>
       typeof d.time === "string" ? d.time : new Date(d.time).toISOString().split("T")[0]
     );
 
-    // Calculate MAs
+    // MA
     const maData: Record<number, LineData[]> = {};
     maLengths.forEach((length) => {
       const sma = calculateSMA(closes, length);
@@ -183,10 +299,9 @@ export function TechnicalChart({
         .filter((d): d is LineData => d !== null);
     });
 
-    // Calculate Bollinger Bands
+    // Bollinger
     const bollingerMiddle = calculateSMA(closes, bollingerLength);
     const stdDev = calculateStdDev(closes, bollingerLength, bollingerMiddle);
-    
     const bollingerData = {
       upper: bollingerMiddle
         .map((middle, index) => {
@@ -207,11 +322,44 @@ export function TechnicalChart({
         .filter((d): d is LineData => d !== null),
     };
 
-    return { maData, bollingerData };
-  }, [data, maLengths, bollingerLength, bollingerStdDev]);
+    // RSI
+    const rsiRaw = calculateRSI(closes, 14);
+    const rsiData = rsiRaw
+      .map((value, index) =>
+        value !== null ? { time: times[index] as Time, value } : null
+      )
+      .filter((d): d is LineData => d !== null);
+
+    // MACD
+    const macdRaw = calculateMACD(closes, 12, 26, 9);
+    const macdLineData = macdRaw.macd
+      .map((value, index) =>
+        value !== null ? { time: times[index] as Time, value } : null
+      )
+      .filter((d): d is LineData => d !== null);
+    const macdSignalData = macdRaw.signal
+      .map((value, index) =>
+        value !== null ? { time: times[index] as Time, value } : null
+      )
+      .filter((d): d is LineData => d !== null);
+    const macdHistData = macdRaw.histogram
+      .map((value, index) => {
+        if (value === null) return null;
+        return {
+          time: times[index] as Time,
+          value,
+          color: value >= 0 ? currentColors.macdHistUp : currentColors.macdHistDown,
+        } as HistogramData;
+      })
+      .filter((d): d is HistogramData => d !== null);
+
+    return { maData, bollingerData, rsiData, macdLineData, macdSignalData, macdHistData };
+  }, [data, maLengths, bollingerLength, bollingerStdDev, currentColors]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
+
+    const hasSubPanel = subPanel !== "none";
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -244,7 +392,7 @@ export function TechnicalChart({
         borderColor: currentColors.border,
         scaleMargins: {
           top: 0.05,
-          bottom: showVolume ? 0.25 : 0.05,
+          bottom: hasSubPanel ? 0.25 : 0.05,
         },
       },
       timeScale: {
@@ -268,7 +416,7 @@ export function TechnicalChart({
       },
     });
 
-    // Add candlestick series (v5 API)
+    // K线
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: currentColors.upColor,
       downColor: currentColors.downColor,
@@ -279,25 +427,83 @@ export function TechnicalChart({
     candlestickSeries.setData(formatCandleData(data));
     candleSeriesRef.current = candlestickSeries;
 
-    // Add volume histogram if enabled (v5 API)
-    if (showVolume && volumeData) {
+    // ---- 子面板 ----
+    const subPanelScaleId = "sub-panel";
+    const subPanelMargins = { top: 0.82, bottom: 0 };
+
+    if (subPanel === "volume" && volumeData) {
       const volumeSeries = chart.addSeries(HistogramSeries, {
         priceFormat: { type: "volume" },
-        priceScaleId: "volume",
+        priceScaleId: subPanelScaleId,
       });
-
-      chart.priceScale("volume").applyOptions({
-        scaleMargins: {
-          top: 0.85,
-          bottom: 0,
-        },
-      });
-
+      chart.priceScale(subPanelScaleId).applyOptions({ scaleMargins: subPanelMargins });
       volumeSeries.setData(formatVolumeData(data, volumeData));
       volumeSeriesRef.current = volumeSeries;
     }
 
-    // Add MA lines (v5 API)
+    if (subPanel === "rsi") {
+      const rsiSeries = chart.addSeries(LineSeries, {
+        color: currentColors.rsiLine,
+        lineWidth: 2,
+        priceScaleId: subPanelScaleId,
+        priceLineVisible: false,
+        lastValueVisible: true,
+      });
+      chart.priceScale(subPanelScaleId).applyOptions({ scaleMargins: subPanelMargins });
+      rsiSeries.setData(indicators.rsiData);
+      // 超买超卖参考线
+      rsiSeries.createPriceLine({
+        price: 70,
+        color: currentColors.rsiOverbought,
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: false,
+        title: "",
+      });
+      rsiSeries.createPriceLine({
+        price: 30,
+        color: currentColors.rsiOversold,
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: false,
+        title: "",
+      });
+      rsiSeriesRef.current = rsiSeries;
+    }
+
+    if (subPanel === "macd") {
+      chart.priceScale(subPanelScaleId).applyOptions({ scaleMargins: subPanelMargins });
+
+      const macdHist = chart.addSeries(HistogramSeries, {
+        priceScaleId: subPanelScaleId,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      macdHist.setData(indicators.macdHistData);
+      macdHistRef.current = macdHist;
+
+      const macdLine = chart.addSeries(LineSeries, {
+        color: currentColors.macdLine,
+        lineWidth: 2,
+        priceScaleId: subPanelScaleId,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      macdLine.setData(indicators.macdLineData);
+      macdLineRef.current = macdLine;
+
+      const macdSignal = chart.addSeries(LineSeries, {
+        color: currentColors.macdSignal,
+        lineWidth: 1,
+        priceScaleId: subPanelScaleId,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      macdSignal.setData(indicators.macdSignalData);
+      macdSignalRef.current = macdSignal;
+    }
+
+    // ---- 均线 ----
     if (showMA) {
       maLengths.forEach((length, index) => {
         const maSeries = chart.addSeries(LineSeries, {
@@ -312,7 +518,7 @@ export function TechnicalChart({
       });
     }
 
-    // Add Bollinger Bands (v5 API)
+    // ---- 布林带 ----
     if (showBollinger) {
       const upperSeries = chart.addSeries(LineSeries, {
         color: currentColors.bollingerUpper,
@@ -350,13 +556,13 @@ export function TechnicalChart({
     chart.timeScale().fitContent();
     chartRef.current = chart;
 
-    // Handle crosshair move
+    // 十字光标
     if (onCrosshairMove) {
       chart.subscribeCrosshairMove((param) => {
         if (param.time && param.seriesData.size > 0) {
           const candleData = param.seriesData.get(candlestickSeries);
           let candle: OHLCData | null = null;
-          
+
           if (candleData && "open" in candleData) {
             const ohlc = candleData as CandlestickData;
             candle = {
@@ -386,7 +592,33 @@ export function TechnicalChart({
               : null,
           };
 
-          onCrosshairMove({ candle, ma: maValues, bollinger: bollingerValues });
+          // RSI
+          let rsiValue: number | null = null;
+          if (rsiSeriesRef.current) {
+            const d = param.seriesData.get(rsiSeriesRef.current);
+            rsiValue = d && "value" in d ? (d as LineData).value : null;
+          }
+
+          // MACD
+          let macdValues: { macd: number | null; signal: number | null; histogram: number | null } | undefined;
+          if (macdLineRef.current) {
+            const ml = param.seriesData.get(macdLineRef.current);
+            const ms = macdSignalRef.current ? param.seriesData.get(macdSignalRef.current) : undefined;
+            const mh = macdHistRef.current ? param.seriesData.get(macdHistRef.current) : undefined;
+            macdValues = {
+              macd: ml && "value" in ml ? (ml as LineData).value : null,
+              signal: ms && "value" in ms ? (ms as LineData).value : null,
+              histogram: mh && "value" in mh ? (mh as HistogramData).value : null,
+            };
+          }
+
+          onCrosshairMove({
+            candle,
+            ma: maValues,
+            bollinger: bollingerValues,
+            rsi: rsiValue,
+            macd: macdValues,
+          });
         } else {
           onCrosshairMove({ candle: null });
         }
@@ -407,6 +639,11 @@ export function TechnicalChart({
       window.removeEventListener("resize", handleResize);
       maSeriesRefs.current.clear();
       bollingerSeriesRefs.current = { upper: null, middle: null, lower: null };
+      volumeSeriesRef.current = null;
+      rsiSeriesRef.current = null;
+      macdLineRef.current = null;
+      macdSignalRef.current = null;
+      macdHistRef.current = null;
       chart.remove();
     };
   }, [
@@ -417,7 +654,7 @@ export function TechnicalChart({
     showMA,
     maLengths,
     showBollinger,
-    showVolume,
+    subPanel,
     currentColors,
     formatCandleData,
     formatVolumeData,

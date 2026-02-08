@@ -22,6 +22,7 @@ import {
   TimeRangeSelector,
   TimeRange,
   OHLCData,
+  SubPanel,
 } from "@/components/charts";
 
 interface PageProps {
@@ -41,10 +42,13 @@ export default function StockDetailPage({ params }: PageProps) {
   const [chartType, setChartType] = useState<ChartType>("technical");
   const [showMA, setShowMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(true);
+  const [subPanel, setSubPanel] = useState<SubPanel>("volume");
   const [crosshairData, setCrosshairData] = useState<{
     candle: OHLCData | null;
     ma?: Record<number, number | null>;
     bollinger?: { upper: number | null; middle: number | null; lower: number | null };
+    rsi?: number | null;
+    macd?: { macd: number | null; signal: number | null; histogram: number | null };
   } | null>(null);
 
   const { data: historicalData, loading: histLoading } = useHistoricalData(symbol, timeRange);
@@ -136,6 +140,8 @@ export default function StockDetailPage({ params }: PageProps) {
     candle: OHLCData | null;
     ma?: Record<number, number | null>;
     bollinger?: { upper: number | null; middle: number | null; lower: number | null };
+    rsi?: number | null;
+    macd?: { macd: number | null; signal: number | null; histogram: number | null };
   }) => {
     setCrosshairData(chartData);
   }, []);
@@ -406,7 +412,7 @@ export default function StockDetailPage({ params }: PageProps) {
                         onChange={(e) => setShowMA(e.target.checked)}
                         className="w-4 h-4 rounded border-stripe-border text-stripe-purple focus:ring-stripe-purple"
                       />
-                      <span>均线 (MA5/20/60)</span>
+                      <span>均线 (MA20/50/200)</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm text-stripe-ink-light cursor-pointer">
                       <input
@@ -417,6 +423,21 @@ export default function StockDetailPage({ params }: PageProps) {
                       />
                       <span>布林带 (BB20,2)</span>
                     </label>
+                    <div className="ml-auto flex items-center gap-1 p-0.5 bg-stripe-bg rounded-md">
+                      {(["volume", "rsi", "macd"] as SubPanel[]).map((panel) => (
+                        <button
+                          key={panel}
+                          onClick={() => setSubPanel(panel)}
+                          className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                            subPanel === panel
+                              ? "bg-white shadow-sm text-stripe-purple"
+                              : "text-stripe-ink-lighter hover:text-stripe-ink"
+                          }`}
+                        >
+                          {panel === "volume" ? "成交量" : panel === "rsi" ? "RSI" : "MACD"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -440,14 +461,28 @@ export default function StockDetailPage({ params }: PageProps) {
                     </span>
                     {crosshairData.ma && showMA && (
                       <>
-                        <span className="text-[#635BFF]">
-                          MA5: {crosshairData.ma[5]?.toFixed(2) ?? "-"}
-                        </span>
                         <span className="text-[#FF9500]">
                           MA20: {crosshairData.ma[20]?.toFixed(2) ?? "-"}
                         </span>
+                        <span className="text-[#635BFF]">
+                          MA50: {crosshairData.ma[50]?.toFixed(2) ?? "-"}
+                        </span>
                         <span className="text-[#00C7BE]">
-                          MA60: {crosshairData.ma[60]?.toFixed(2) ?? "-"}
+                          MA200: {crosshairData.ma[200]?.toFixed(2) ?? "-"}
+                        </span>
+                      </>
+                    )}
+                    {crosshairData.rsi != null && subPanel === "rsi" && (
+                      <span className={`font-medium ${crosshairData.rsi > 70 ? "text-stripe-danger" : crosshairData.rsi < 30 ? "text-stripe-success" : "text-stripe-ink"}`}>
+                        RSI: {crosshairData.rsi.toFixed(1)}
+                      </span>
+                    )}
+                    {crosshairData.macd && subPanel === "macd" && (
+                      <>
+                        <span className="text-[#635BFF]">MACD: {crosshairData.macd.macd?.toFixed(3) ?? "-"}</span>
+                        <span className="text-[#FF9500]">Signal: {crosshairData.macd.signal?.toFixed(3) ?? "-"}</span>
+                        <span className={crosshairData.macd.histogram && crosshairData.macd.histogram >= 0 ? "text-stripe-success" : "text-stripe-danger"}>
+                          Hist: {crosshairData.macd.histogram?.toFixed(3) ?? "-"}
                         </span>
                       </>
                     )}
@@ -470,9 +505,9 @@ export default function StockDetailPage({ params }: PageProps) {
                       height={window.innerWidth < 768 ? 400 : 500}
                       theme="light"
                       showMA={showMA && chartType === "technical"}
-                      maLengths={[5, 20, 60]}
+                      maLengths={[20, 50, 200]}
                       showBollinger={showBollinger && chartType === "technical"}
-                      showVolume={chartType !== "line"}
+                      subPanel={chartType === "technical" ? subPanel : chartType === "line" ? "none" : "volume"}
                       onCrosshairMove={handleCrosshairMove}
                     />
                   ) : (
