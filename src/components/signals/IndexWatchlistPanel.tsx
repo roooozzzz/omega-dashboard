@@ -26,6 +26,13 @@ function HealthDot({ status }: { status: IndexETFData["healthStatus"] }) {
   );
 }
 
+const ETF_GLOSSARY_KEY: Record<string, string> = {
+  VOO: "etfVOO",
+  QQQ: "etfQQQ",
+  VTI: "etfVTI",
+  SCHD: "etfSCHD",
+};
+
 function ETFCard({ etf }: { etf: IndexETFData }) {
   const isUp = etf.changePercent >= 0;
   const pe = etf.pe ?? 0;
@@ -34,6 +41,7 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
   const rsi14 = etf.rsi14 ?? 50;
   const peRatio = pe5yAvg > 0 ? pe / pe5yAvg : 1;
   const peStatus = peRatio < 0.9 ? "text-emerald-600" : peRatio > 1.1 ? "text-red-500" : "text-stripe-ink";
+  const etfGlossary = ETF_GLOSSARY_KEY[etf.symbol] ? INDEX_METRIC_GLOSSARY[ETF_GLOSSARY_KEY[etf.symbol]] : undefined;
 
   return (
     <Link
@@ -45,6 +53,7 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
         <div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-stripe-ink dark:text-white">{etf.symbol}</span>
+            {etfGlossary && <InfoTooltip entry={etfGlossary} iconSize="sm" />}
             <ArrowRight className="w-3.5 h-3.5 text-stripe-ink-lighter opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-xs text-stripe-ink-lighter dark:text-gray-500 mt-0.5">{etf.name}</p>

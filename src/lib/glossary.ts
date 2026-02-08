@@ -526,6 +526,27 @@ export const INDEX_METRIC_GLOSSARY: Record<string, GlossaryEntry> = {
     },
     tip: "健康状态是快速一览的综合指标。「谨慎」不代表要停止定投，而是提醒你当前市场环境需要更多关注。在「谨慎」时坚持定投，往往能获得更低的平均成本。",
   },
+  // ETF 标的说明
+  etfVOO: {
+    term: "VOO — Vanguard S&P 500 ETF",
+    definition: "追踪标普 500 指数，持有美国 500 家最大上市公司。是最主流的美股大盘指数基金，适合作为核心持仓。",
+    tip: "「买入美国」的最简单方式。巴菲特多次推荐普通投资者定投标普 500 指数基金。费率仅 0.03%，几乎零成本。",
+  },
+  etfQQQ: {
+    term: "QQQ — Invesco Nasdaq-100 ETF",
+    definition: "追踪纳斯达克 100 指数，重仓苹果、微软、英伟达、Meta 等科技巨头。科技股占比超过 50%，波动比 VOO 更大，成长性也更强。",
+    tip: "适合看好科技长期趋势的投资者。牛市时涨幅通常超过 VOO，熊市时跌幅也更大。与 VOO 搭配可以调节科技股权重。",
+  },
+  etfVTI: {
+    term: "VTI — Vanguard Total Stock Market ETF",
+    definition: "追踪美国全市场指数（CRSP US Total Market Index），覆盖大中小盘约 4000 只股票。比 VOO 更分散，额外包含中小盘股。",
+    tip: "与 VOO 高度重叠（大盘部分相同），但额外包含约 10% 的中小盘股。如果已持有 VOO，通常不需要同时持有 VTI。",
+  },
+  etfSCHD: {
+    term: "SCHD — Schwab US Dividend Equity ETF",
+    definition: "追踪道琼斯美国股息 100 指数，精选高股息且基本面健康的公司。注重股息收入，波动通常低于大盘。",
+    tip: "适合追求现金流的投资者。股息率通常 3-4%，远高于 VOO 的 ~1.3%。在熊市中因估值较低、股息支撑，往往更抗跌。",
+  },
 };
 
 // ─── 工具：根据指标关键词匹配 glossary entry ───
