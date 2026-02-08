@@ -472,8 +472,6 @@ export function TechnicalChart({
     }
 
     if (subPanel === "macd") {
-      chart.priceScale(subPanelScaleId).applyOptions({ scaleMargins: subPanelMargins });
-
       const macdHist = chart.addSeries(HistogramSeries, {
         priceScaleId: subPanelScaleId,
         priceLineVisible: false,
@@ -481,6 +479,8 @@ export function TechnicalChart({
       });
       macdHist.setData(indicators.macdHistData);
       macdHistRef.current = macdHist;
+
+      chart.priceScale(subPanelScaleId).applyOptions({ scaleMargins: subPanelMargins });
 
       const macdLine = chart.addSeries(LineSeries, {
         color: currentColors.macdLine,
