@@ -155,7 +155,7 @@ export function StrategyPanel() {
       color: "bg-stripe-ink",
       stocks: longSignals.map(signalToStock),
       loading: longLoading,
-      href: "/signals?strategy=long",
+      href: "/signals/long",
     },
     {
       id: "flow",
@@ -166,7 +166,7 @@ export function StrategyPanel() {
       color: "bg-stripe-purple",
       stocks: midSignals.map(signalToStock),
       loading: midLoading,
-      href: "/signals?strategy=mid",
+      href: "/signals/mid",
     },
     {
       id: "swing",
@@ -177,7 +177,7 @@ export function StrategyPanel() {
       color: "bg-stripe-warning",
       stocks: shortSignals.map(signalToStock),
       loading: shortLoading,
-      href: "/signals?strategy=short",
+      href: "/signals/short",
     },
   ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Building2, TrendingUp, Zap, Loader2, Check, X } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import {
@@ -82,18 +83,16 @@ function formatTime(dateStr: string): string {
 
 interface SignalsTableProps {
   strategy?: "long" | "mid" | "short";
+  ticker?: string;
+  action?: string;
   limit?: number;
 }
 
 function DecisionCell({ signal, onUpdate }: { signal: TradingSignal; onUpdate: () => void }) {
   const [decision, setDecision] = useState(
-    (signal as unknown as { user_decision?: string }).user_decision || "pending"
+    signal.userDecision || "pending"
   );
   const [loading, setLoading] = useState(false);
-
-  if (signal.strategy === "long") {
-    return <span className="text-xs text-stripe-ink-lighter">-</span>;
-  }
 
   if (decision === "confirmed") {
     return <StatusBadge variant="success">已确认</StatusBadge>;
@@ -142,9 +141,11 @@ function DecisionCell({ signal, onUpdate }: { signal: TradingSignal; onUpdate: (
   );
 }
 
-export function SignalsTable({ strategy, limit = 50 }: SignalsTableProps) {
+export function SignalsTable({ strategy, ticker, action, limit = 50 }: SignalsTableProps) {
   const { signals, loading, error, refresh } = useSignals({
     strategy,
+    ticker,
+    action,
     limit,
     autoRefresh: true,
     refreshInterval: 30000,
@@ -241,21 +242,24 @@ export function SignalsTable({ strategy, limit = 50 }: SignalsTableProps) {
                   className="hover:bg-stripe-bg border-b border-stripe-border-light"
                 >
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <Link
+                      href={`/stock/${encodeURIComponent(signal.ticker)}`}
+                      className="flex items-center gap-3 group"
+                    >
                       <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center">
                         <span className="text-sm font-medium text-stripe-ink">
                           {signal.ticker[0]}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-sm text-stripe-ink">
+                        <p className="font-medium text-sm text-stripe-ink group-hover:text-stripe-purple transition-colors">
                           {signal.ticker}
                         </p>
                         <p className="text-xs text-stripe-ink-lighter">
                           {signal.name || signal.ticker}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell>
                     <StatusBadge variant={signalConfig[signalDisplay].variant}>

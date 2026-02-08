@@ -162,9 +162,81 @@ export interface StockData {
   updatedAt: string;
 }
 
+/** 后端 StockDetail 的原始结构 */
+interface StockDetailRaw {
+  quote: {
+    symbol: string;
+    name: string | null;
+    price: number;
+    change: number;
+    changePercent: number;
+    volume: number;
+    marketCap: number | null;
+    peRatio: number | null;
+    grossMargin: number | null;
+    returnOnEquity: number | null;
+    revenueGrowth: number | null;
+    profitMargin: number | null;
+  };
+  history: { date: string; open: number; high: number; low: number; close: number; volume: number }[];
+  indicators: {
+    rsi2: number | null;
+    rsi14: number | null;
+    rsRating: number | null;
+    bbUpper: number | null;
+    bbLower: number | null;
+    bbMiddle: number | null;
+    ma50: number | null;
+    ma200: number | null;
+  };
+}
+
+function mapStockDetail(raw: StockDetailRaw): StockData {
+  const q = raw.quote;
+  const ind = raw.indicators;
+
+  // 计算布林带位置
+  let bollinger: StockData["bollinger"] = null;
+  if (ind.bbUpper != null && ind.bbLower != null && ind.bbMiddle != null) {
+    const position =
+      q.price >= ind.bbUpper ? "above" as const
+        : q.price <= ind.bbLower ? "below" as const
+          : "middle" as const;
+    bollinger = { upper: ind.bbUpper, middle: ind.bbMiddle, lower: ind.bbLower, position };
+  }
+
+  // RSI 信号判断
+  const rsi14 = ind.rsi14 ?? 50;
+  const rsiSignal: StockData["rsiSignal"] =
+    rsi14 < 30 ? "oversold" : rsi14 > 70 ? "overbought" : "neutral";
+
+  return {
+    symbol: q.symbol,
+    name: q.name ?? q.symbol,
+    price: q.price,
+    change: q.change,
+    changePercent: q.changePercent,
+    volume: q.volume,
+    marketCap: q.marketCap ?? 0,
+    pe: q.peRatio ?? 0,
+    forwardPE: 0,
+    priceToBook: 0,
+    rsRating: ind.rsRating ?? 0,
+    return6m: 0,
+    return3m: 0,
+    return1m: 0,
+    rsi: rsi14,
+    rsiSignal,
+    bollinger,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export const stockApi = {
-  getStock: (symbol: string) =>
-    request<StockData>(`/api/stock/${encodeURIComponent(symbol)}`),
+  getStock: async (symbol: string): Promise<StockData> => {
+    const raw = await request<StockDetailRaw>(`/api/stock/${encodeURIComponent(symbol)}`);
+    return mapStockDetail(raw);
+  },
 };
 
 // ============ 护城河数据 ============
@@ -207,39 +279,127 @@ export interface StrongBuysResponse {
   count: number;
 }
 
+/** 后端 MoatProposal 的原始结构 (CamelModel 序列化后) */
+interface MoatProposalRaw {
+  id: string;
+  ticker: string;
+  name: string;
+  sector: string | null;
+  scores: {
+    scaleEconomies: number;
+    networkEffects: number;
+    counterPositioning: number;
+    switchingCosts: number;
+    branding: number;
+    corneredResource: number;
+    processPower: number;
+  };
+  totalScore: number;
+  topPower: string;
+  confidence: "High" | "Medium" | "Low";
+  analysisSummary: string;
+  status: "PENDING" | "VERIFIED" | "REJECTED";
+  createdAt: string;
+  reviewedAt: string | null;
+  reviewerNotes: string | null;
+}
+
+/** 7 Powers 元数据：中文名、英文键名、满分 */
+const POWER_META: Record<string, { name: string; nameEn: string; maxScore: number }> = {
+  scaleEconomies:     { name: "规模经济",   nameEn: "Scale Economies",     maxScore: 5 },
+  networkEffects:     { name: "网络效应",   nameEn: "Network Effects",     maxScore: 5 },
+  counterPositioning: { name: "差异化定位", nameEn: "Counter Positioning", maxScore: 5 },
+  switchingCosts:     { name: "转换成本",   nameEn: "Switching Costs",     maxScore: 5 },
+  branding:           { name: "品牌",       nameEn: "Branding",            maxScore: 5 },
+  corneredResource:   { name: "稀缺资源",   nameEn: "Cornered Resource",   maxScore: 5 },
+  processPower:       { name: "流程优势",   nameEn: "Process Power",       maxScore: 5 },
+};
+
+function mapMoatProposal(raw: MoatProposalRaw): MoatData {
+  const powers = {} as MoatData["powers"];
+  for (const [key, meta] of Object.entries(POWER_META)) {
+    const score = (raw.scores as Record<string, number>)[key] ?? 0;
+    (powers as Record<string, MoatPower>)[key] = {
+      name: meta.name,
+      nameEn: meta.nameEn,
+      score,
+      maxScore: meta.maxScore,
+      description: score >= 4 ? "强" : score >= 2 ? "中等" : "弱",
+    };
+  }
+
+  return {
+    ticker: raw.ticker,
+    name: raw.name,
+    sector: raw.sector ?? "",
+    totalScore: raw.totalScore,
+    maxScore: 35, // 7 powers × 5 max
+    status: raw.status.toLowerCase() as MoatData["status"],
+    powers,
+    aiSummary: raw.analysisSummary,
+    analyzedAt: raw.createdAt,
+    reviewedAt: raw.reviewedAt ?? undefined,
+  };
+}
+
 export const moatApi = {
-  getAll: () => request<MoatListResponse>("/api/moat"),
-  
-  getByTicker: (ticker: string) =>
-    request<MoatData>(`/api/moat/${encodeURIComponent(ticker)}`),
-  
-  getStrongBuys: () => request<StrongBuysResponse>("/api/moat/strong-buys"),
-  
-  propose: (ticker: string) =>
-    request<MoatData>("/api/moat", {
+  getAll: async (): Promise<MoatListResponse> => {
+    const raw = await request<{ moats: MoatProposalRaw[]; total: number }>("/api/moat");
+    return {
+      moats: (raw.moats || []).map(mapMoatProposal),
+      total: raw.total,
+    };
+  },
+
+  getByTicker: async (ticker: string): Promise<MoatData> => {
+    const raw = await request<MoatProposalRaw>(`/api/moat/${encodeURIComponent(ticker)}`);
+    return mapMoatProposal(raw);
+  },
+
+  // Fix [中]: 后端返回 "total"，前端期望 "count" — 映射适配
+  getStrongBuys: async (): Promise<StrongBuysResponse> => {
+    const raw = await request<{ strongBuys: MoatProposalRaw[]; total: number }>("/api/moat/strong-buys");
+    return {
+      strongBuys: (raw.strongBuys || []).map(mapMoatProposal),
+      count: raw.total,
+    };
+  },
+
+  propose: async (ticker: string): Promise<MoatData> => {
+    const raw = await request<MoatProposalRaw>("/api/moat", {
       method: "POST",
       body: JSON.stringify({ ticker }),
-    }),
-  
-  approve: (ticker: string) =>
-    request<MoatData>(`/api/moat/${encodeURIComponent(ticker)}/approve`, {
+    });
+    return mapMoatProposal(raw);
+  },
+
+  approve: async (ticker: string, adjustedScores?: Record<string, number>): Promise<MoatData> => {
+    const raw = await request<MoatProposalRaw>(`/api/moat/${encodeURIComponent(ticker)}/approve`, {
       method: "POST",
-    }),
-  
+      body: JSON.stringify(
+        adjustedScores ? { adjustedScores } : {}
+      ),
+    });
+    return mapMoatProposal(raw);
+  },
+
+  // Fix [中]: 后端期望 JSON body { notes }, 前端之前发 { reason }
   reject: (ticker: string, reason?: string) =>
     request<{ message: string }>(
       `/api/moat/${encodeURIComponent(ticker)}/reject`,
       {
         method: "POST",
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ notes: reason }),
       }
     ),
-  
-  update: (ticker: string, data: Partial<MoatData>) =>
-    request<MoatData>(`/api/moat/${encodeURIComponent(ticker)}`, {
+
+  update: async (ticker: string, data: Partial<MoatData>): Promise<MoatData> => {
+    const raw = await request<MoatProposalRaw>(`/api/moat/${encodeURIComponent(ticker)}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }),
+    });
+    return mapMoatProposal(raw);
+  },
 };
 
 // ============ 交易信号 ============
@@ -288,6 +448,7 @@ export interface SignalStats {
 export interface SignalsListResponse {
   signals: TradingSignal[];
   total: number;
+  stats?: SignalStats;
 }
 
 export interface SignalStatsResponse {
@@ -298,6 +459,7 @@ export interface SignalFilters {
   limit?: number;
   strategy?: "long" | "mid" | "short";
   ticker?: string;
+  action?: string;
   status?: "active" | "executed" | "expired" | "cancelled";
 }
 
@@ -312,35 +474,134 @@ export interface ScannerStatus {
   error: string | null;
 }
 
+/** 后端 TradingSignal 的原始结构 (CamelModel 序列化后) */
+interface TradingSignalRaw {
+  id: string;
+  ticker: string;
+  name: string | null;
+  strategy: "long" | "mid" | "short";
+  signalType: string;
+  score: number;
+  triggeredAt: string;
+  reasons: string[];
+  action: "BUY" | "SELL" | "HOLD" | "WATCH";
+  suggestedPosition: number;
+  price: number | null;
+  changePercent: number | null;
+  userDecision: "confirmed" | "ignored" | null;
+  userDecisionAt: string | null;
+  userNotes: string | null;
+}
+
+/** 后端 SignalStats 的原始结构 */
+interface SignalStatsRaw {
+  total: number;
+  today: number;
+  byStrategy: Record<string, number>;
+  byAction: Record<string, number>;
+  byDecision: Record<string, number>;
+  subscribers: number;
+}
+
+/** 后端 SignalsResponse 的原始结构 */
+interface SignalsResponseRaw {
+  signals: TradingSignalRaw[];
+  stats: SignalStatsRaw;
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+const ACTION_TO_TYPE: Record<string, TradingSignal["type"]> = {
+  BUY: "buy",
+  SELL: "sell",
+  HOLD: "watch",
+  WATCH: "alert",
+};
+
+function mapTradingSignal(raw: TradingSignalRaw): TradingSignal {
+  return {
+    id: raw.id,
+    ticker: raw.ticker,
+    name: raw.name ?? raw.ticker,
+    type: ACTION_TO_TYPE[raw.action] ?? "watch",
+    strategy: raw.strategy,
+    indicator: raw.signalType,
+    indicatorValue: `${raw.score}/100`,
+    reason: raw.reasons.join("; ") || raw.signalType,
+    price: raw.price ?? 0,
+    triggeredAt: raw.triggeredAt,
+    status: raw.userDecision === "confirmed" ? "executed"
+      : raw.userDecision === "ignored" ? "cancelled"
+        : "active",
+    userDecision: raw.userDecision ?? "pending",
+    userDecisionAt: raw.userDecisionAt ?? undefined,
+    userNotes: raw.userNotes ?? undefined,
+  };
+}
+
+function mapSignalStats(raw: SignalStatsRaw): SignalStats {
+  return {
+    total: raw.total ?? 0,
+    active: raw.today ?? 0,
+    byStrategy: {
+      long: raw.byStrategy?.long ?? 0,
+      mid: raw.byStrategy?.mid ?? 0,
+      short: raw.byStrategy?.short ?? 0,
+    },
+    byType: {
+      buy: raw.byAction?.BUY ?? 0,
+      sell: raw.byAction?.SELL ?? 0,
+      watch: raw.byAction?.HOLD ?? raw.byAction?.WATCH ?? 0,
+      alert: raw.byAction?.WATCH ?? 0,
+    },
+    byDecision: {
+      confirmed: raw.byDecision?.confirmed ?? 0,
+      ignored: raw.byDecision?.ignored ?? 0,
+      pending: raw.total - (raw.byDecision?.confirmed ?? 0) - (raw.byDecision?.ignored ?? 0),
+    },
+  };
+}
+
 export const signalsApi = {
-  getAll: (filters: SignalFilters = {}) => {
+  getAll: async (filters: SignalFilters = {}): Promise<SignalsListResponse> => {
     const params = new URLSearchParams();
-    if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.limit) params.append("page_size", filters.limit.toString());
     if (filters.strategy) params.append("strategy", filters.strategy);
     if (filters.ticker) params.append("ticker", filters.ticker);
-    if (filters.status) params.append("status", filters.status);
+    if (filters.action) params.append("action", filters.action);
 
     const query = params.toString();
-    return request<SignalsListResponse>(
+    const raw = await request<SignalsResponseRaw>(
       `/api/signals${query ? `?${query}` : ""}`
     );
+    return {
+      signals: (raw.signals || []).map(mapTradingSignal),
+      total: raw.total,
+      stats: raw.stats ? mapSignalStats(raw.stats) : undefined,
+    };
   },
 
   getStats: () => request<SignalStatsResponse>("/api/signals/stats"),
 
   getScannerStatus: () => request<ScannerStatus>("/api/signals/scanner-status"),
 
-  confirm: (signalId: string, notes?: string) =>
-    request<TradingSignal>(`/api/signals/${encodeURIComponent(signalId)}/confirm`, {
-      method: "POST",
-      body: JSON.stringify({ notes }),
-    }),
+  // Fix [低]: 后端返回 { status, signal } 包装，解包提取 signal
+  confirm: async (signalId: string, notes?: string): Promise<TradingSignal> => {
+    const raw = await request<{ status: string; signal: TradingSignalRaw }>(
+      `/api/signals/${encodeURIComponent(signalId)}/confirm`,
+      { method: "POST", body: JSON.stringify({ notes }) }
+    );
+    return mapTradingSignal(raw.signal);
+  },
 
-  ignore: (signalId: string, notes?: string) =>
-    request<TradingSignal>(`/api/signals/${encodeURIComponent(signalId)}/ignore`, {
-      method: "POST",
-      body: JSON.stringify({ notes }),
-    }),
+  ignore: async (signalId: string, notes?: string): Promise<TradingSignal> => {
+    const raw = await request<{ status: string; signal: TradingSignalRaw }>(
+      `/api/signals/${encodeURIComponent(signalId)}/ignore`,
+      { method: "POST", body: JSON.stringify({ notes }) }
+    );
+    return mapTradingSignal(raw.signal);
+  },
 };
 
 // ============ WebSocket ============

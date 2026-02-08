@@ -15,6 +15,7 @@ interface UseSignalsOptions {
   limit?: number;
   strategy?: "long" | "mid" | "short";
   ticker?: string;
+  action?: string;
   status?: "active" | "executed" | "expired" | "cancelled";
   autoRefresh?: boolean;
   refreshInterval?: number;
@@ -34,6 +35,7 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
     limit = 50,
     strategy,
     ticker,
+    action,
     status,
     autoRefresh = false,
     refreshInterval = 30000,
@@ -55,40 +57,17 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
       const filters: SignalFilters = { limit };
       if (strategy) filters.strategy = strategy;
       if (ticker) filters.ticker = ticker;
+      if (action) filters.action = action;
       if (status) filters.status = status;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const signalsRes: any = await signalsApi.getAll(filters);
+      const signalsRes = await signalsApi.getAll(filters);
 
       setSignals(signalsRes.signals || []);
       setTotal(signalsRes.total || 0);
 
-      // stats 内嵌在 signals 响应中，字段名映射
-      const rawStats = signalsRes.stats;
-      if (rawStats) {
-        const byStrategy = rawStats.byStrategy ?? rawStats.by_strategy ?? {};
-        const byAction = rawStats.byAction ?? rawStats.by_action ?? {};
-        const byDecision = rawStats.byDecision ?? rawStats.by_decision ?? {};
-        setStats({
-          total: rawStats.total ?? 0,
-          active: rawStats.today ?? 0,
-          byStrategy: {
-            long: byStrategy.long ?? 0,
-            mid: byStrategy.mid ?? 0,
-            short: byStrategy.short ?? 0,
-          },
-          byType: {
-            buy: byAction.BUY ?? byAction.buy ?? 0,
-            sell: byAction.SELL ?? byAction.sell ?? 0,
-            watch: byAction.WATCH ?? byAction.watch ?? 0,
-            alert: byAction.alert ?? 0,
-          },
-          byDecision: {
-            confirmed: byDecision.confirmed ?? 0,
-            ignored: byDecision.ignored ?? 0,
-            pending: byDecision.pending ?? 0,
-          },
-        });
+      // stats 已在 api.ts 的 mapSignalStats 中完成映射
+      if (signalsRes.stats) {
+        setStats(signalsRes.stats);
       }
       setError(null);
       failCountRef.current = 0;
@@ -106,7 +85,7 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [limit, strategy, ticker, status]);
+  }, [limit, strategy, ticker, action, status]);
 
   useEffect(() => {
     fetchData();

@@ -68,7 +68,7 @@ export function MoatScannerTable() {
             AI 分析完成，等待人工审核确认
           </p>
         </div>
-        <Link href="/signals?strategy=long&tab=moat">
+        <Link href="/signals/long">
           <Button
             variant="outline"
             className="bg-white border-stripe-border text-stripe-ink hover:bg-stripe-bg"
@@ -134,14 +134,14 @@ export function MoatScannerTable() {
                         {proposal.ticker[0]}
                       </span>
                     </div>
-                    <div>
+                    <Link href={`/stock/${proposal.ticker}`} className="hover:underline">
                       <p className="font-medium text-sm text-stripe-ink">
                         {proposal.ticker}
                       </p>
                       <p className="text-xs text-stripe-ink-lighter">
                         {proposal.name}
                       </p>
-                    </div>
+                    </Link>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -167,7 +167,7 @@ export function MoatScannerTable() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Link href="/signals?strategy=long&tab=moat">
+                    <Link href="/signals/long">
                       <Button
                         variant="ghost"
                         size="sm"

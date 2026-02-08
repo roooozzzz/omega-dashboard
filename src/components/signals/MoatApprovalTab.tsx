@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Shield, Building2, Users, Cpu, Scale, Zap, Cog } from "lucide-react";
+import { Shield, Building2, Users, Cpu, Scale, Zap, Cog, Plus, Loader2 } from "lucide-react";
 import { MoatStats } from "@/components/moat-scanner/MoatStats";
 import { MoatFilters } from "@/components/moat-scanner/MoatFilters";
 import { MoatDetailCard } from "@/components/moat-scanner/MoatDetailCard";
@@ -58,8 +58,9 @@ function apiToProposal(apiData: any): MoatProposal {
 
 export function MoatApprovalTab() {
   const { data, loading, error, refresh } = useMoatList(false);
-  const { approve, reject: rejectMoat, approving, rejecting } = useMoatActions();
+  const { approve, reject: rejectMoat, propose, approving, rejecting, proposing } = useMoatActions();
   const [filter, setFilter] = useState<string>("");
+  const [newTicker, setNewTicker] = useState("");
 
   const proposals = useMemo(() => data.map(apiToProposal), [data]);
 
@@ -75,8 +76,18 @@ export function MoatApprovalTab() {
     return { total: proposals.length, pending, verified, rejected };
   }, [proposals]);
 
-  const handleApprove = async (ticker: string) => {
-    const result = await approve(ticker);
+  const handlePropose = async () => {
+    const t = newTicker.trim().toUpperCase();
+    if (!t) return;
+    const result = await propose(t);
+    if (result) {
+      setNewTicker("");
+      await refresh();
+    }
+  };
+
+  const handleApprove = async (ticker: string, adjustedScores?: Record<string, number>) => {
+    const result = await approve(ticker, adjustedScores);
     if (result) await refresh();
   };
 
@@ -87,6 +98,30 @@ export function MoatApprovalTab() {
 
   return (
     <>
+      {/* 添加新公司 */}
+      <div className="flex items-center gap-3 mb-4">
+        <input
+          type="text"
+          value={newTicker}
+          onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === "Enter" && handlePropose()}
+          placeholder="输入股票代码，如 AMZN"
+          className="flex-1 max-w-xs px-3 py-2 text-sm border border-stripe-border rounded-md focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
+        />
+        <button
+          onClick={handlePropose}
+          disabled={proposing || !newTicker.trim()}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md bg-stripe-purple text-white hover:bg-stripe-purple/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {proposing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+          添加新公司
+        </button>
+      </div>
+
       <MoatStats
         total={stats.total}
         pending={stats.pending}

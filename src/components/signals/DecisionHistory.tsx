@@ -28,16 +28,24 @@ function formatTime(dateStr: string): string {
   }
 }
 
-export function DecisionHistory() {
-  const [filter, setFilter] = useState<DecisionFilter>("all");
-  const { signals, loading } = useSignals({ limit: 100, autoRefresh: true, refreshInterval: 15000 });
+interface DecisionHistoryProps {
+  strategy?: "long" | "mid" | "short";
+}
 
-  // 只显示非 long 策略、且已做过决策的信号
+export function DecisionHistory({ strategy }: DecisionHistoryProps = {}) {
+  const [filter, setFilter] = useState<DecisionFilter>("all");
+  const { signals, loading } = useSignals({
+    limit: 100,
+    strategy,
+    autoRefresh: true,
+    refreshInterval: 15000,
+  });
+
+  // 只显示已做过决策的信号
   const decidedSignals = signals.filter((s) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sig = s as any;
     const decision = sig.user_decision ?? sig.userDecision ?? "pending";
-    if (s.strategy === "long") return false;
     if (decision === "pending") return false;
     if (filter === "all") return true;
     return decision === filter;
@@ -86,7 +94,7 @@ export function DecisionHistory() {
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <p className="text-stripe-ink-lighter">暂无决策记录</p>
           <p className="text-sm text-stripe-ink-lighter mt-1">
-            对中线和短线信号做出确认或忽略后，记录将显示在此处
+            对{strategy === "long" ? "长线" : strategy === "mid" ? "中线" : strategy === "short" ? "短线" : ""}信号做出确认或忽略后，记录将显示在此处
           </p>
         </div>
       ) : (

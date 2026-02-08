@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -38,7 +38,7 @@ const confidenceColor = {
 
 interface MoatDetailCardProps {
   proposal: MoatProposal;
-  onApprove?: (ticker: string) => void;
+  onApprove?: (ticker: string, adjustedScores?: Record<string, number>) => void;
   onReject?: (ticker: string) => void;
   loading?: boolean;
 }
@@ -52,6 +52,54 @@ export function MoatDetailCard({
   const [expanded, setExpanded] = useState(false);
   const StatusIcon = statusConfig[proposal.status].icon;
   const isPending = proposal.status === "待审核";
+
+  // 初始化编辑分数（仅待审核时可编辑）
+  const initialScores = useMemo(() => {
+    const scores: Record<string, number> = {};
+    proposal.powers.forEach((p) => {
+      scores[p.name] = p.score;
+    });
+    return scores;
+  }, [proposal.powers]);
+
+  const [editedScores, setEditedScores] = useState<Record<string, number>>(initialScores);
+
+  // 计算编辑后的总分
+  const editedTotal = useMemo(
+    () => Object.values(editedScores).reduce((sum, s) => sum + s, 0),
+    [editedScores]
+  );
+
+  // 检测是否有修改
+  const hasChanges = useMemo(
+    () => proposal.powers.some((p) => editedScores[p.name] !== p.score),
+    [proposal.powers, editedScores]
+  );
+
+  const handleScoreChange = (name: string, value: number) => {
+    setEditedScores((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // 构建 adjustedScores 对象（使用 powers 的 key 映射）
+  const buildAdjustedScores = (): Record<string, number> | undefined => {
+    if (!hasChanges) return undefined;
+    // 根据 power.name 映射回 API key
+    const nameToKey: Record<string, string> = {
+      "规模经济": "scaleEconomies",
+      "网络效应": "networkEffects",
+      "差异化定位": "counterPositioning",
+      "转换成本": "switchingCosts",
+      "品牌": "branding",
+      "稀缺资源": "corneredResource",
+      "流程优势": "processPower",
+    };
+    const result: Record<string, number> = {};
+    for (const [name, score] of Object.entries(editedScores)) {
+      const key = nameToKey[name];
+      if (key) result[key] = score;
+    }
+    return result;
+  };
 
   return (
     <div className="bg-white rounded-lg border border-stripe-border shadow-[var(--shadow-omega-sm)] hover:shadow-[var(--shadow-omega)] transition-shadow duration-150">
@@ -85,12 +133,17 @@ export function MoatDetailCard({
           {/* AI Score */}
           <div className="text-center">
             <p className="text-2xl font-semibold text-stripe-ink">
-              {proposal.aiScore}
+              {isPending && hasChanges ? editedTotal : proposal.aiScore}
               <span className="text-sm text-stripe-ink-lighter font-normal">
                 /{proposal.maxScore}
               </span>
             </p>
-            <p className="text-xs text-stripe-ink-lighter">AI 评分</p>
+            <p className="text-xs text-stripe-ink-lighter">
+              AI 评分
+              {isPending && hasChanges && (
+                <span className="ml-1 text-stripe-purple">已调整</span>
+              )}
+            </p>
           </div>
 
           {/* Confidence */}
@@ -133,7 +186,10 @@ export function MoatDetailCard({
           <div className="p-5 grid grid-cols-4 md:grid-cols-7 gap-4">
             {proposal.powers.map((power) => {
               const Icon = power.icon;
-              const percentage = (power.score / power.maxScore) * 100;
+              const currentScore = isPending
+                ? editedScores[power.name] ?? power.score
+                : power.score;
+              const percentage = (currentScore / power.maxScore) * 100;
               return (
                 <div
                   key={power.name}
@@ -145,17 +201,39 @@ export function MoatDetailCard({
                       {power.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="flex-1 h-2 bg-stripe-border rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-stripe-purple rounded-full"
-                        style={{ width: `${percentage}%` }}
+                  {isPending ? (
+                    /* 可编辑滑杆 */
+                    <div className="flex items-center gap-2 mb-2">
+                      <input
+                        type="range"
+                        min={0}
+                        max={power.maxScore}
+                        step={1}
+                        value={currentScore}
+                        onChange={(e) =>
+                          handleScoreChange(power.name, Number(e.target.value))
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                        className="omega-slider flex-1"
                       />
+                      <span className="text-sm font-medium text-stripe-ink tabular-nums w-8 text-right">
+                        {currentScore}/{power.maxScore}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-stripe-ink">
-                      {power.score}/{power.maxScore}
-                    </span>
-                  </div>
+                  ) : (
+                    /* 静态进度条 */
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex-1 h-2 bg-stripe-border rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-stripe-purple rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-stripe-ink">
+                        {power.score}/{power.maxScore}
+                      </span>
+                    </div>
+                  )}
                   {power.description && (
                     <p className="text-xs text-stripe-ink-lighter">
                       {power.description}
@@ -189,7 +267,7 @@ export function MoatDetailCard({
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
-                  className="bg-white border-stripe-danger text-stripe-danger hover:bg-stripe-danger-light"
+                  className="border-stripe-border text-stripe-ink hover:bg-stripe-danger-light hover:text-stripe-danger-text hover:border-stripe-danger-light"
                   disabled={loading}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -204,7 +282,7 @@ export function MoatDetailCard({
                   disabled={loading}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onApprove?.(proposal.ticker);
+                    onApprove?.(proposal.ticker, buildAdjustedScores());
                   }}
                 >
                   <CheckCircle className="w-4 h-4" />

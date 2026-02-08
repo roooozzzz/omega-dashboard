@@ -144,7 +144,7 @@ interface UseMoatActionsResult {
   rejecting: boolean;
   error: string | null;
   propose: (ticker: string) => Promise<MoatData | null>;
-  approve: (ticker: string) => Promise<MoatData | null>;
+  approve: (ticker: string, adjustedScores?: Record<string, number>) => Promise<MoatData | null>;
   reject: (ticker: string, reason?: string) => Promise<boolean>;
 }
 
@@ -172,11 +172,11 @@ export function useMoatActions(): UseMoatActionsResult {
     }
   }, []);
 
-  const approve = useCallback(async (ticker: string): Promise<MoatData | null> => {
+  const approve = useCallback(async (ticker: string, adjustedScores?: Record<string, number>): Promise<MoatData | null> => {
     setApproving(true);
     setError(null);
     try {
-      const result = await moatApi.approve(ticker);
+      const result = await moatApi.approve(ticker, adjustedScores);
       return result;
     } catch (err) {
       if (err instanceof ApiError) {

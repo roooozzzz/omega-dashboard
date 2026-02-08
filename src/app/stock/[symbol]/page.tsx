@@ -1,14 +1,17 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon, Newspaper, Users } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon, Newspaper, Users, Check, X, Loader2, Shield, Plus, Zap } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useStockData, useHistoricalData, useSentiment, useRecommendation } from "@/hooks";
+import { useSignals } from "@/hooks/useSignals";
+import { signalsApi } from "@/lib/api";
+import { useMoatData, useMoatActions } from "@/hooks/useMoatData";
 import {
   TechnicalChart,
   TimeRangeSelector,
@@ -42,6 +45,39 @@ export default function StockDetailPage({ params }: PageProps) {
   const { data: historicalData, loading: histLoading } = useHistoricalData(symbol, timeRange);
   const { data: sentiment } = useSentiment(symbol);
   const { data: recommendations } = useRecommendation(symbol);
+
+  // 信号决策 — 每个策略只保留最新一条
+  const { signals: rawSignals, refresh: refreshSignals } = useSignals({ ticker: symbol, limit: 20 });
+  const signals = useMemo(() => {
+    const seen = new Map<string, typeof rawSignals[0]>();
+    for (const sig of rawSignals) {
+      const key = sig.strategy;
+      if (!seen.has(key)) seen.set(key, sig);
+    }
+    return Array.from(seen.values());
+  }, [rawSignals]);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [decisions, setDecisions] = useState<Record<string, string>>({});
+
+  const handleSignalDecision = useCallback(async (signalId: string, action: "confirm" | "ignore") => {
+    setDecidingId(signalId);
+    try {
+      if (action === "confirm") {
+        await signalsApi.confirm(signalId);
+        setDecisions(prev => ({ ...prev, [signalId]: "confirmed" }));
+      } else {
+        await signalsApi.ignore(signalId);
+        setDecisions(prev => ({ ...prev, [signalId]: "ignored" }));
+      }
+      refreshSignals();
+    } catch { /* ignore */ } finally {
+      setDecidingId(null);
+    }
+  }, [refreshSignals]);
+
+  // 护城河
+  const { data: moatData, loading: moatLoading, error: moatError, refresh: refreshMoat } = useMoatData(symbol);
+  const { approve, reject: rejectMoat, propose, approving, rejecting, proposing } = useMoatActions();
 
   const formatNumber = (num: number | undefined) => {
     if (num === undefined || isNaN(num)) return "N/A";
@@ -632,17 +668,76 @@ export default function StockDetailPage({ params }: PageProps) {
               </div>
 
               {/* 策略建议 */}
-              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
+              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)] mb-6">
                 <h3 className="font-semibold text-stripe-ink mb-4">OMEGA 策略建议</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  {/* 长线 · THE CORE — 护城河集成 */}
                   <div className="p-4 bg-stripe-bg rounded-lg">
-                    <p className="text-sm font-medium text-stripe-ink mb-2">长线 · THE CORE</p>
-                    <p className="text-xs text-stripe-ink-lighter">
-                      需要护城河评分 ≥ 20 分，并通过人工审核
-                    </p>
-                    <StatusBadge variant="neutral" className="mt-2">
-                      需分析护城河
-                    </StatusBadge>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="w-4 h-4 text-stripe-purple" />
+                      <p className="text-sm font-medium text-stripe-ink">长线 · THE CORE</p>
+                    </div>
+                    {moatLoading ? (
+                      <p className="text-xs text-stripe-ink-lighter">加载护城河数据...</p>
+                    ) : moatData ? (() => {
+                      const status = moatData.status;
+                      const totalScore = moatData.totalScore || 0;
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-stripe-ink">{totalScore}<span className="text-xs font-normal text-stripe-ink-lighter">/35</span></span>
+                            <StatusBadge variant={status === "VERIFIED" ? "success" : status === "REJECTED" ? "danger" : "warning"}>
+                              {status === "VERIFIED" ? "已通过" : status === "REJECTED" ? "已拒绝" : "待审核"}
+                            </StatusBadge>
+                          </div>
+                          {status === "PENDING" && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                className="bg-stripe-success text-white hover:bg-stripe-success/90 text-xs px-3 py-1 h-7"
+                                disabled={approving}
+                                onClick={async () => {
+                                  const result = await approve(symbol);
+                                  if (result) refreshMoat();
+                                }}
+                              >
+                                {approving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                <span className="ml-1">通过</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="border-stripe-border text-stripe-ink hover:bg-stripe-danger-light hover:text-stripe-danger text-xs px-3 py-1 h-7"
+                                disabled={rejecting}
+                                onClick={async () => {
+                                  const result = await rejectMoat(symbol);
+                                  if (result) refreshMoat();
+                                }}
+                              >
+                                {rejecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                <span className="ml-1">拒绝</span>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })() : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-stripe-ink-lighter">
+                          {moatError?.includes("暂无") ? "暂无护城河评分" : "需要护城河评分 ≥ 20 分"}
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="text-xs px-3 py-1 h-7 border-stripe-purple text-stripe-purple hover:bg-stripe-purple/10"
+                          disabled={proposing}
+                          onClick={async () => {
+                            const result = await propose(symbol);
+                            if (result) refreshMoat();
+                          }}
+                        >
+                          {proposing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                          <span className="ml-1">添加到护城河评估</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="p-4 bg-stripe-bg rounded-lg">
                     <p className="text-sm font-medium text-stripe-ink mb-2">中线 · THE FLOW</p>
@@ -679,6 +774,74 @@ export default function StockDetailPage({ params }: PageProps) {
                     </StatusBadge>
                   </div>
                 </div>
+              </div>
+
+              {/* 活跃信号 */}
+              <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="w-4 h-4 text-stripe-purple" />
+                  <h3 className="font-semibold text-stripe-ink">活跃信号</h3>
+                  <span className="text-xs text-stripe-ink-lighter">({signals.length})</span>
+                </div>
+                {signals.length === 0 ? (
+                  <p className="text-sm text-stripe-ink-lighter py-4 text-center">暂无活跃信号</p>
+                ) : (
+                  <div className="space-y-3">
+                    {signals.map((sig) => {
+                      const sigDecision = decisions[sig.id] || sig.userDecision || "pending";
+                      const strategyLabel = sig.strategy === "long" ? "长线" : sig.strategy === "mid" ? "中线" : "短线";
+                      const strategyColor = sig.strategy === "long" ? "text-stripe-purple" : sig.strategy === "mid" ? "text-stripe-info-text" : "text-stripe-warning";
+                      const actionLabel = sig.type === "buy" ? "买入" : sig.type === "sell" ? "卖出" : sig.type === "watch" ? "观望" : "预警";
+                      const actionVariant = sig.type === "buy" ? "success" : sig.type === "sell" ? "danger" : "warning";
+                      return (
+                        <div key={sig.id} className="flex items-center gap-4 p-3 bg-stripe-bg rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <StatusBadge variant={actionVariant as "success" | "danger" | "warning"}>{actionLabel}</StatusBadge>
+                              <span className={`text-xs font-medium ${strategyColor}`}>{strategyLabel}</span>
+                              <span className="text-xs text-stripe-ink-lighter">{sig.indicator}: {sig.indicatorValue}</span>
+                            </div>
+                            {sig.reason && (
+                              <p className="text-xs text-stripe-ink-lighter mt-1 truncate">{sig.reason}</p>
+                            )}
+                          </div>
+                          <div className="text-right text-sm shrink-0">
+                            <p className="font-medium text-stripe-ink">${sig.price?.toFixed(2) || "N/A"}</p>
+                            <p className="text-xs text-stripe-ink-lighter">
+                              {sig.triggeredAt ? new Date(sig.triggeredAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                            </p>
+                          </div>
+                          <div className="shrink-0">
+                            {sigDecision === "confirmed" ? (
+                              <StatusBadge variant="success">已确认</StatusBadge>
+                            ) : sigDecision === "ignored" ? (
+                              <StatusBadge variant="neutral">已忽略</StatusBadge>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleSignalDecision(sig.id, "confirm")}
+                                  disabled={decidingId === sig.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-stripe-success-light text-[#0E6245] hover:bg-stripe-success/20 transition-colors disabled:opacity-50"
+                                >
+                                  {decidingId === sig.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                  确认
+                                </button>
+                                <button
+                                  onClick={() => handleSignalDecision(sig.id, "ignore")}
+                                  disabled={decidingId === sig.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-stripe-bg text-stripe-ink-lighter hover:bg-stripe-border transition-colors disabled:opacity-50"
+                                >
+                                  {decidingId === sig.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                                  忽略
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </>
           )}
