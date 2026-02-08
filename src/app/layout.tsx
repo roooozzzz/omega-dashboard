@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className={`${inter.variable} ${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${inter.className} antialiased min-w-[1400px]`}>
         <ThemeProvider>
           <SidebarProvider>
             {children}
