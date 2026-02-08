@@ -686,11 +686,11 @@ export default function StockDetailPage({ params }: PageProps) {
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <span className="text-lg font-bold text-stripe-ink">{totalScore}<span className="text-xs font-normal text-stripe-ink-lighter">/35</span></span>
-                            <StatusBadge variant={status === "VERIFIED" ? "success" : status === "REJECTED" ? "danger" : "warning"}>
-                              {status === "VERIFIED" ? "已通过" : status === "REJECTED" ? "已拒绝" : "待审核"}
+                            <StatusBadge variant={status === "verified" ? "success" : status === "rejected" ? "danger" : "warning"}>
+                              {status === "verified" ? "已通过" : status === "rejected" ? "已拒绝" : "待审核"}
                             </StatusBadge>
                           </div>
-                          {status === "PENDING" && (
+                          {status === "pending" && (
                             <div className="flex items-center gap-2 mt-2">
                               <Button
                                 className="bg-stripe-success text-white hover:bg-stripe-success/90 text-xs px-3 py-1 h-7"

@@ -1,5 +1,6 @@
 "use client";
 
+import { ReactNode } from "react";
 import { Search } from "lucide-react";
 
 interface SignalsFiltersProps {
@@ -7,6 +8,7 @@ interface SignalsFiltersProps {
   onSearchChange: (value: string) => void;
   action: string;
   onActionChange: (value: string) => void;
+  extraSlot?: ReactNode;
 }
 
 export function SignalsFilters({
@@ -14,6 +16,7 @@ export function SignalsFilters({
   onSearchChange,
   action,
   onActionChange,
+  extraSlot,
 }: SignalsFiltersProps) {
   return (
     <div className="bg-white rounded-lg border border-stripe-border p-4 mb-6 shadow-[var(--shadow-omega-sm)]">
@@ -25,7 +28,7 @@ export function SignalsFilters({
             type="text"
             value={searchText}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="搜索股票代码或公司名称..."
+            placeholder="搜索股票代码..."
             className="w-full pl-10 pr-4 py-2 text-sm border border-stripe-border rounded-md focus:outline-none focus:ring-2 focus:ring-stripe-purple/20 focus:border-stripe-purple"
           />
         </div>
@@ -42,6 +45,14 @@ export function SignalsFilters({
           <option value="HOLD">观望</option>
           <option value="WATCH">预警</option>
         </select>
+
+        {/* Extra slot (e.g. "添加新公司" for long strategy) */}
+        {extraSlot && (
+          <>
+            <div className="w-px h-8 bg-stripe-border" />
+            {extraSlot}
+          </>
+        )}
       </div>
     </div>
   );
