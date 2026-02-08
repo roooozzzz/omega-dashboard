@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { useIndexWatchlist } from "@/hooks/useIndexData";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { INDEX_METRIC_GLOSSARY } from "@/lib/glossary";
 import type { IndexETFData } from "@/lib/api";
 
 function HealthDot({ status }: { status: IndexETFData["healthStatus"] }) {
@@ -43,7 +45,10 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
           </div>
           <p className="text-xs text-stripe-ink-lighter dark:text-gray-500 mt-0.5">{etf.name}</p>
         </div>
-        <HealthDot status={etf.healthStatus} />
+        <div className="flex items-center gap-1">
+          <HealthDot status={etf.healthStatus} />
+          <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexHealthStatus} iconSize="sm" />
+        </div>
       </div>
 
       {/* 价格 */}
@@ -63,25 +68,37 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
 
       {/* 指标网格 */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-        <div className="flex justify-between">
-          <span className="text-stripe-ink-lighter dark:text-gray-500">PE</span>
+        <div className="flex justify-between items-center">
+          <span className="text-stripe-ink-lighter dark:text-gray-500 flex items-center gap-0.5">
+            PE
+            <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexPe} iconSize="sm" />
+          </span>
           <span className={`font-medium ${peStatus}`}>
             {etf.pe.toFixed(1)}
             <span className="text-stripe-ink-lighter dark:text-gray-600 font-normal"> / {etf.pe5yAvg.toFixed(1)}</span>
           </span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-stripe-ink-lighter dark:text-gray-500">股息率</span>
+        <div className="flex justify-between items-center">
+          <span className="text-stripe-ink-lighter dark:text-gray-500 flex items-center gap-0.5">
+            股息率
+            <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexDividendYield} iconSize="sm" />
+          </span>
           <span className="font-medium text-stripe-ink dark:text-gray-300">{etf.dividendYield.toFixed(2)}%</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-stripe-ink-lighter dark:text-gray-500">MA200</span>
+        <div className="flex justify-between items-center">
+          <span className="text-stripe-ink-lighter dark:text-gray-500 flex items-center gap-0.5">
+            MA200
+            <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexMa200} iconSize="sm" />
+          </span>
           <span className={`font-medium ${etf.aboveMa200 ? "text-emerald-600" : "text-red-500"}`}>
             {etf.aboveMa200 ? "上方" : "下方"}
           </span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-stripe-ink-lighter dark:text-gray-500">RSI(14)</span>
+        <div className="flex justify-between items-center">
+          <span className="text-stripe-ink-lighter dark:text-gray-500 flex items-center gap-0.5">
+            RSI(14)
+            <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexRsi14} iconSize="sm" />
+          </span>
           <span className={`font-medium ${etf.rsi14 < 30 ? "text-emerald-600" : etf.rsi14 > 70 ? "text-red-500" : "text-stripe-ink dark:text-gray-300"}`}>
             {etf.rsi14.toFixed(1)}
           </span>
@@ -91,7 +108,10 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
       {/* 底部：跟踪指数 + 费率 */}
       <div className="mt-3 pt-2.5 border-t border-stripe-border-light dark:border-[#2A2A35] flex items-center justify-between text-xs text-stripe-ink-lighter dark:text-gray-500">
         <span>{etf.indexTracked}</span>
-        <span>费率 {etf.expenseRatio}%</span>
+        <span className="flex items-center gap-0.5">
+          费率 {etf.expenseRatio}%
+          <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexExpenseRatio} iconSize="sm" />
+        </span>
       </div>
     </Link>
   );

@@ -207,15 +207,37 @@ export const SIGNAL_GLOSSARY: Record<string, GlossaryEntry> = {
   },
   indexDca: {
     term: "INDEX_DCA（定投提醒）",
-    definition: "定期定额投资提醒，根据预设频率自动触发的买入信号。",
+    definition: "定期定额投资提醒。系统在每周一自动生成（非熔断期间），提醒你执行本周的 ETF 定投。信号分数固定为 80，建议仓位为总资金的 10%。",
+    benchmark: {
+      levels: [
+        { range: "每周一触发", label: "正常频率", status: "good" },
+        { range: "未触发", label: "当前处于熔断状态，暂停定投提醒", status: "warning" },
+      ],
+    },
+    tip: "定投的精髓是「定」——固定时间、固定金额、不做择时。确认信号后请在当天完成买入操作。",
   },
   indexValue: {
     term: "INDEX_VALUE（估值买入）",
-    definition: "当 ETF 估值显著低于历史均值时触发的加仓信号，表示当前价格具有额外吸引力。",
+    definition: "当 ETF 估值显著低于历史均值或市场出现恐慌时触发的加仓信号。触发条件：价格 < MA200 或 VIX > 30。信号分数动态计算（60-100），越低估分数越高。",
+    benchmark: {
+      levels: [
+        { range: "分数 80-100", label: "极度低估，强加仓信号", status: "good" },
+        { range: "分数 60-79", label: "适度低估，可考虑加仓", status: "good" },
+        { range: "VIX 触发", label: "市场恐慌导致，需结合估值判断", status: "warning" },
+      ],
+    },
+    tip: "这是常规定投之外的「加餐」机会，不要把全部资金一次投入。建议每次加投为月定投额的 50%，分批加仓摊低成本。",
   },
   indexRisk: {
     term: "INDEX_RISK（风险预警）",
-    definition: "当 ETF 技术指标出现异常（如跌破 MA200、RSI 极端）时触发的风险警示。",
+    definition: "当 ETF 技术面全面走弱时触发的风险警示。触发条件：价格跌破 MA200 且 RSI(14) < 30。信号动作为 WATCH（观察），不建议卖出。",
+    benchmark: {
+      levels: [
+        { range: "触发", label: "技术面全面走弱，关注但不恐慌", status: "danger" },
+        { range: "未触发", label: "技术面正常", status: "good" },
+      ],
+    },
+    tip: "风险预警是提醒你关注市场状态，不是卖出信号！指数定投策略的核心是在市场低迷时持续积累份额。历史上每次大跌后指数都创了新高。",
   },
   // 技术指标术语
   rsi: {
@@ -340,8 +362,16 @@ export const STATS_GLOSSARY: Record<string, GlossaryEntry> = {
   },
   pendingDecision: {
     term: "待决策",
-    definition: "系统已生成信号但用户尚未做出确认或忽略决策的信号数量。",
-    tip: "建议及时处理待决策信号，避免错过最佳入场时机。",
+    definition: "系统已生成但用户尚未做出确认或忽略决策的信号数量。每个信号都需要你的人工判断。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "全部处理完毕", status: "good" },
+        { range: "1-5 个", label: "正常积压", status: "neutral" },
+        { range: "> 5 个", label: "积压过多，建议尽快处理", status: "warning" },
+        { range: "> 10 个", label: "信号可能过期失效", status: "danger" },
+      ],
+    },
+    tip: "建议每天花 5 分钟处理待决策信号。INDEX_DCA 信号建议在每周一开盘前处理，INDEX_VALUE 信号时效性更强。",
   },
   totalSignals: {
     term: "信号总数",
@@ -353,7 +383,15 @@ export const STATS_GLOSSARY: Record<string, GlossaryEntry> = {
   },
   confirmed: {
     term: "已确认",
-    definition: "用户审核后确认执行的信号数量，意味着用户认同系统的判断并计划跟进。",
+    definition: "用户审核后确认执行的信号数量。确认意味着你认同系统判断并计划跟进操作。",
+    benchmark: {
+      levels: [
+        { range: "确认率 > 80%", label: "系统判断与你高度一致", status: "good" },
+        { range: "确认率 50-80%", label: "正常范围，人机配合", status: "neutral" },
+        { range: "确认率 < 50%", label: "信号质量可能需要调优", status: "warning" },
+      ],
+    },
+    tip: "L2 系统的核心是人机协作：系统负责发现机会，你负责最终判断。不必 100% 确认，但长期确认率过低说明策略参数可能需要调整。",
   },
   ignored: {
     term: "已忽略",
@@ -361,12 +399,132 @@ export const STATS_GLOSSARY: Record<string, GlossaryEntry> = {
   },
   dcaStreak: {
     term: "连续定投",
-    definition: "连续执行定投操作的周数，反映投资纪律性。",
-    tip: "保持定投纪律是指数投资成功的关键，避免情绪化中断。",
+    definition: "连续执行定投操作的周数。每周系统生成 INDEX_DCA 信号，用户确认后计为一周。连续不中断的周数反映投资纪律性。",
+    benchmark: {
+      levels: [
+        { range: "≥ 52 周", label: "超过一年，纪律极佳", status: "good" },
+        { range: "12-51 周", label: "稳定执行中", status: "good" },
+        { range: "4-11 周", label: "刚开始建立习惯", status: "neutral" },
+        { range: "< 4 周", label: "尚未形成纪律", status: "warning" },
+      ],
+    },
+    tip: "定投的核心是纪律，而非择时。即使市场下跌也应坚持，长期来看波动会被平滑。中断定投往往错过低价买入机会。",
   },
   etfCount: {
     term: "ETF 数量",
-    definition: "当前指数策略跟踪的 ETF 数量。",
+    definition: "当前指数策略跟踪的 ETF 数量。OMEGA 默认跟踪 4 只覆盖不同市场的 ETF，实现分散化定投。",
+    benchmark: {
+      levels: [
+        { range: "4 只（默认）", label: "VOO + QQQ + VTI + SCHD，核心组合", status: "good" },
+        { range: "< 3 只", label: "覆盖不足，缺少分散化", status: "warning" },
+        { range: "> 6 只", label: "过度分散，管理成本上升", status: "neutral" },
+      ],
+    },
+    tip: "4 只 ETF 覆盖大盘（VOO）、科技（QQQ）、全市场（VTI）和高股息（SCHD），兼顾成长与防御。",
+  },
+  valueSignals: {
+    term: "估值买入",
+    definition: "最近 30 天内触发的 INDEX_VALUE 信号数量。当 ETF 估值显著低于历史均值，或市场出现恐慌性下跌（VIX > 30）时触发。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "估值正常，无额外加投机会", status: "neutral" },
+        { range: "1-2 个", label: "部分 ETF 出现低估值机会", status: "good" },
+        { range: "3-4 个", label: "市场普遍低估，大好机会", status: "good" },
+      ],
+    },
+    tip: "估值买入是在常规定投之外的「加餐」机会。触发条件：PE < 5年均值的90% 或 VIX > 30。不要贪多，每次加投建议为月定投额的 50%。",
+  },
+  riskAlerts: {
+    term: "风险预警",
+    definition: "最近 30 天内触发的 INDEX_RISK 信号数量。当 ETF 跌破 200 日均线且 RSI(14) 进入超卖区域时触发。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "市场健康，无风险", status: "good" },
+        { range: "1-2 个", label: "个别 ETF 出现技术性风险", status: "warning" },
+        { range: "3-4 个", label: "市场普遍走弱，需谨慎", status: "danger" },
+      ],
+    },
+    tip: "风险预警不代表要止损！指数定投策略中，下跌反而是低价积累份额的机会。预警的意义是提醒你关注市场状态，而非恐慌卖出。",
+  },
+};
+
+// ─── 区域 6：指数 ETF 卡片指标 ───
+
+export const INDEX_METRIC_GLOSSARY: Record<string, GlossaryEntry> = {
+  indexPe: {
+    term: "PE / PE 5年均值",
+    definition: "市盈率（Price-to-Earnings Ratio）是股价与每股盈利的比值。左侧为当前 PE，右侧为过去 5 年的 PE 均值。两者的比值反映当前估值相对于历史水平的高低。",
+    benchmark: {
+      levels: [
+        { range: "PE/均值 < 0.9", label: "估值偏低，定投加码好时机", status: "good" },
+        { range: "PE/均值 0.9-1.1", label: "估值合理，维持正常定投", status: "neutral" },
+        { range: "PE/均值 1.1-1.3", label: "估值偏高，维持但不加码", status: "warning" },
+        { range: "PE/均值 > 1.3", label: "显著高估，考虑降低定投额", status: "danger" },
+      ],
+    },
+    tip: "ETF 卡片上当比值 < 0.9 时数字显示为绿色，> 1.1 时显示为红色。PE 受市场情绪和利率影响较大，不要单独作为买卖依据。",
+  },
+  indexDividendYield: {
+    term: "股息率",
+    definition: "过去 12 个月的股息总额占当前股价的百分比（TTM Dividend Yield）。反映 ETF 的现金回报能力。",
+    benchmark: {
+      levels: [
+        { range: "> 3%", label: "高股息，适合收入型投资者", status: "good" },
+        { range: "1.5-3%", label: "中等，平衡成长与收入", status: "neutral" },
+        { range: "0.5-1.5%", label: "偏低，侧重资本增值", status: "neutral" },
+        { range: "< 0.5%", label: "极低股息，纯成长型", status: "neutral" },
+      ],
+    },
+    tip: "SCHD 专注高股息策略（通常 > 3%），QQQ 侧重成长（通常 < 1%），各有定位。股息率高不一定好——可能是股价暴跌导致的「被动高息」。",
+  },
+  indexMa200: {
+    term: "MA200（200 日均线）",
+    definition: "过去 200 个交易日的收盘价平均值，是判断长期趋势方向的经典指标。「上方」表示价格在均线之上（上升趋势），「下方」表示在均线之下（下降趋势）。",
+    benchmark: {
+      levels: [
+        { range: "上方（绿色）", label: "长期上升趋势，定投安全区", status: "good" },
+        { range: "下方（红色）", label: "长期趋势转弱，可能触发风险预警", status: "danger" },
+      ],
+    },
+    tip: "跌破 MA200 是 OMEGA 系统的重要风险信号之一。但对于指数定投策略，跌破 MA200 反而可能是以更低价格积累份额的机会——关键是不要停止定投。",
+  },
+  indexRsi14: {
+    term: "RSI(14)（14日相对强弱指标）",
+    definition: "14 个交易日内上涨力量与下跌力量的对比。数值 0-100，反映 ETF 是否处于超买或超卖状态。",
+    benchmark: {
+      levels: [
+        { range: "< 30", label: "超卖，价格可能被低估", status: "good" },
+        { range: "30-50", label: "偏弱但正常", status: "neutral" },
+        { range: "50-70", label: "正常偏强", status: "neutral" },
+        { range: "> 70", label: "超买，短期可能回调", status: "warning" },
+      ],
+    },
+    tip: "RSI(14) < 30 配合跌破 MA200 会触发 INDEX_RISK 风险预警。对指数来说，超卖通常是加码定投的信号而非止损信号。",
+  },
+  indexExpenseRatio: {
+    term: "费率（Expense Ratio）",
+    definition: "ETF 每年收取的管理费用占资产净值的百分比。费率直接侵蚀长期收益，是选择 ETF 时的重要考量因素。",
+    benchmark: {
+      levels: [
+        { range: "≤ 0.05%", label: "极低费率，行业最优", status: "good" },
+        { range: "0.05-0.20%", label: "合理范围，长期影响有限", status: "neutral" },
+        { range: "0.20-0.50%", label: "中等，注意长期复合影响", status: "warning" },
+        { range: "> 0.50%", label: "偏高，建议寻找替代品", status: "danger" },
+      ],
+    },
+    tip: "VOO 和 VTI 费率仅 0.03%，属于全市场最低。QQQ 费率 0.20% 稍高但可接受。长期定投中 0.1% 的费率差异可能导致数万美元的收益差距。",
+  },
+  indexHealthStatus: {
+    term: "健康状态",
+    definition: "系统根据 PE 估值、MA200 位置和 RSI(14) 三项指标综合判断的 ETF 健康度。绿色圆点 = 健康，黄色 = 观望，红色 = 谨慎。",
+    benchmark: {
+      levels: [
+        { range: "健康（healthy）", label: "PE 合理 + 在 MA200 上方 + RSI 正常", status: "good" },
+        { range: "观望（watch）", label: "跌破 MA200 / RSI < 40 / PE 偏高（> 均值×1.3）三者任一", status: "warning" },
+        { range: "谨慎（caution）", label: "跌破 MA200 且 RSI < 30（技术面全面走弱）", status: "danger" },
+      ],
+    },
+    tip: "健康状态是快速一览的综合指标。「谨慎」不代表要停止定投，而是提醒你当前市场环境需要更多关注。在「谨慎」时坚持定投，往往能获得更低的平均成本。",
   },
 };
 

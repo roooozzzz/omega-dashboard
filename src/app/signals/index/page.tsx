@@ -54,11 +54,13 @@ export default function IndexSignalsPage() {
       label: "估值买入",
       value: overview?.valueSignals ?? 0,
       icon: <TrendingDown className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "valueSignals",
     },
     {
       label: "风险预警",
       value: overview?.riskAlerts ?? 0,
       icon: <AlertTriangle className="w-5 h-5 text-stripe-warning" />,
+      glossaryKey: "riskAlerts",
     },
     {
       label: "已确认",
