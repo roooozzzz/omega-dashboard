@@ -19,7 +19,7 @@ import type { LucideIcon } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SourceBadge } from "@/components/shared/SourceBadge";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
-import { SIGNAL_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
+import { SIGNAL_GLOSSARY, STATS_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
 import { MoatPowersGrid } from "@/components/signals/MoatPowersGrid";
 import {
   Table,
@@ -377,6 +377,7 @@ export function SignalsTable({
               <TableCell colSpan={8} className="p-0">
                 <div className="flex items-center px-4 py-2.5 min-w-[900px]">
                   <div className="w-[160px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">股票</div>
+
                   <div className="w-[70px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
                     信号
                     <InfoTooltip entry={SIGNAL_GLOSSARY.signalColumn} />
@@ -401,7 +402,10 @@ export function SignalsTable({
                         : SIGNAL_GLOSSARY.reasonColumnLong
                     } />
                   </div>
-                  <div className="w-[140px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">决策</div>
+                  <div className="w-[140px] shrink-0 text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide flex items-center gap-0.5">
+                    决策
+                    <InfoTooltip entry={STATS_GLOSSARY.decisionFlow} />
+                  </div>
                 </div>
               </TableCell>
             </TableRow>
@@ -458,7 +462,7 @@ export function SignalsTable({
                               );
                               if (!crossEntries || crossEntries.length === 0) return null;
                               return (
-                                <p className="text-[11px] text-stripe-ink-lighter mt-0.5 truncate">
+                                <p className="text-[11px] text-stripe-ink-lighter mt-0.5 truncate flex items-center gap-0.5">
                                   也在:{" "}
                                   {crossEntries.map((entry, idx) => {
                                     const route = `/signals/${entry.strategy}`;
@@ -478,6 +482,7 @@ export function SignalsTable({
                                       </span>
                                     );
                                   })}
+                                  <InfoTooltip entry={STATS_GLOSSARY.crossStrategy} />
                                 </p>
                               );
                             })()}

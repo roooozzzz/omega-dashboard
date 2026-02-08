@@ -446,6 +446,101 @@ export const STATS_GLOSSARY: Record<string, GlossaryEntry> = {
     },
     tip: "风险预警不代表要止损！指数定投策略中，下跌反而是低价积累份额的机会。预警的意义是提醒你关注市场状态，而非恐慌卖出。",
   },
+  // ─── 信号页统计卡片通用 ───
+  moatAnalyzed: {
+    term: "已分析总数",
+    definition: "AI 已完成护城河评估的公司总数，包括已通过、已拒绝和待审核的全部提案。",
+    tip: "数量多说明你的关注池在扩大。质量比数量更重要——专注审核 Confidence 为 High 的提案。",
+  },
+  buySignals: {
+    term: "买入信号",
+    definition: "系统检测到满足买入条件的信号数量。买入信号需要你人工确认后才代表你认同该判断。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "暂无机会，耐心等待", status: "neutral" },
+        { range: "1-3 个", label: "少量机会，逐一评估", status: "good" },
+        { range: "> 5 个", label: "机会较多，优先处理高分信号", status: "good" },
+      ],
+    },
+    tip: "不是所有买入信号都需要执行。结合信号评分、你的仓位情况和市场环境综合判断。",
+  },
+  sellSignals: {
+    term: "卖出信号",
+    definition: "系统检测到需要卖出或减仓的信号数量。卖出信号通常意味着技术指标转弱或趋势反转。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "持仓安全，无需操作", status: "good" },
+        { range: "1-2 个", label: "部分持仓需关注", status: "warning" },
+        { range: "> 3 个", label: "多个持仓转弱，需及时处理", status: "danger" },
+      ],
+    },
+    tip: "卖出信号比买入信号更紧急——保护本金永远是第一位的。",
+  },
+  watchSignals: {
+    term: "观望信号",
+    definition: "条件接近但不完全满足的信号。系统认为值得关注但还不到买入时机，建议持续跟踪。",
+    tip: "观望信号可能在未来几天内转化为买入信号。加入你的关注列表，等待条件完全满足。",
+  },
+  alertSignals: {
+    term: "预警信号",
+    definition: "风险提醒信号，表示技术指标出现异常或接近危险区域。不需要立即操作，但需要提高警惕。",
+    benchmark: {
+      levels: [
+        { range: "0 个", label: "一切正常", status: "good" },
+        { range: "1-2 个", label: "个别风险，留意即可", status: "warning" },
+        { range: "> 3 个", label: "多个预警，市场可能变化", status: "danger" },
+      ],
+    },
+  },
+  signalScore: {
+    term: "信号评分",
+    definition: "系统对交易信号的综合评分（0-100），分数越高代表信号质量越好、触发条件越充分。",
+    benchmark: {
+      levels: [
+        { range: "90-100", label: "极强信号，多重条件确认", status: "good" },
+        { range: "70-89", label: "较强信号，值得重点关注", status: "good" },
+        { range: "50-69", label: "中等信号，需结合其他因素", status: "neutral" },
+        { range: "< 50", label: "弱信号，谨慎对待", status: "warning" },
+      ],
+    },
+    tip: "评分由多项指标加权计算。高分信号不代表一定赚钱，但历史上高分信号的成功率显著高于低分。",
+  },
+  suggestedPosition: {
+    term: "建议仓位",
+    definition: "系统建议你在此信号上投入的资金比例（占总资金的百分比）。例如 10% 表示如果总资金 10 万，建议投入 1 万。",
+    benchmark: {
+      levels: [
+        { range: "5-10%", label: "标准仓位（单只股票）", status: "good" },
+        { range: "10-15%", label: "重仓（高信心信号）", status: "neutral" },
+        { range: "> 15%", label: "集中持仓（风险较高）", status: "warning" },
+      ],
+    },
+    tip: "新手建议单只股票不超过总资金的 10%。即使信号再好，也要分散投资降低风险。",
+  },
+  crossStrategy: {
+    term: "跨策略共振",
+    definition: "同一只股票在多个策略层级（长线/中线/短线）同时触发了信号。共振出现意味着多个维度同时看好，信号可靠性更高。",
+    benchmark: {
+      levels: [
+        { range: "三层共振", label: "极罕见，强信号", status: "good" },
+        { range: "两层共振", label: "较强确认", status: "good" },
+        { range: "单层信号", label: "正常，单独评估", status: "neutral" },
+      ],
+    },
+    tip: "跨策略共振是 OMEGA 系统的独特优势。当长线护城河 + 中线动量 + 短线超卖同时满足时，是最理想的买入时机。",
+  },
+  decisionFlow: {
+    term: "决策操作",
+    definition: "每个信号需要你做出决策：「确认」表示你认同系统判断并计划在券商（如 IBKR）手动执行交易；「忽略」表示你不认同或暂时不操作。",
+    benchmark: {
+      levels: [
+        { range: "确认", label: "认同信号，计划跟进操作", status: "good" },
+        { range: "忽略", label: "不认同或已有持仓，跳过", status: "neutral" },
+        { range: "待决策", label: "尚未处理，建议尽快决定", status: "warning" },
+      ],
+    },
+    tip: "OMEGA 是 L2 系统（人机协作）：AI 负责发现机会，你负责最终判断和执行。确认信号后需要你自己在券商平台下单。",
+  },
 };
 
 // ─── 区域 6：指数 ETF 卡片指标 ───
@@ -599,11 +694,253 @@ const INDICATOR_KEYWORDS: Record<string, string> = {
   "风险预警": "indexRisk",
 };
 
+// ─── 区域 7：股票详情页指标 ───
+
+export const STOCK_GLOSSARY: Record<string, GlossaryEntry> = {
+  marketCap: {
+    term: "市值（Market Cap）",
+    definition: "公司所有流通股票的总价值 = 股价 × 总股数。反映公司在市场中的规模和地位。",
+    benchmark: {
+      levels: [
+        { range: "> $1T", label: "超大型股（Mega Cap）", status: "good" },
+        { range: "$10B - $1T", label: "大型股（Large Cap）", status: "good" },
+        { range: "$2B - $10B", label: "中型股（Mid Cap）", status: "neutral" },
+        { range: "< $2B", label: "小型股（Small Cap）", status: "warning" },
+      ],
+    },
+    tip: "大型股通常更稳定，适合长线策略；小型股波动大但成长空间也大。OMEGA 长线策略偏好大型股。",
+  },
+  peRatio: {
+    term: "市盈率（P/E Ratio）",
+    definition: "股价与每股盈利的比值，衡量投资者愿意为每一元利润支付多少钱。PE 越低理论上越「便宜」。",
+    benchmark: {
+      levels: [
+        { range: "< 15", label: "低估值（价值型）", status: "good" },
+        { range: "15 - 25", label: "合理估值", status: "neutral" },
+        { range: "25 - 40", label: "偏高（成长型）", status: "warning" },
+        { range: "> 40", label: "高估值（需高增长支撑）", status: "danger" },
+      ],
+    },
+    tip: "PE 需结合行业对比：科技股 PE 普遍高于银行股。负值表示公司亏损。不同行业的「合理 PE」差异很大。",
+  },
+  volume: {
+    term: "成交量（Volume）",
+    definition: "当日股票交易的总股数（M = 百万股）。例如 56M = 5600 万股。反映市场活跃度和投资者参与热情。",
+    benchmark: {
+      levels: [
+        { range: "> 50M", label: "超高（大型热门股，如 AAPL、NVDA）", status: "good" },
+        { range: "10M - 50M", label: "活跃（机构关注度高）", status: "good" },
+        { range: "1M - 10M", label: "正常（中型股常见范围）", status: "neutral" },
+        { range: "< 1M", label: "冷门（流动性低，买卖困难）", status: "warning" },
+      ],
+    },
+    tip: "判断成交量高低需与该股自身均量对比：今日成交量明显高于过去 20 天均值（放量）配合上涨是好信号，配合下跌是坏信号。",
+  },
+  technicalChart: {
+    term: "技术走势",
+    definition: "通过 K 线图、均线、布林带等技术指标分析股票价格趋势和买卖时机的可视化工具。",
+    benchmark: {
+      levels: [
+        { range: "价格在均线上方", label: "上升趋势", status: "good" },
+        { range: "价格在均线附近", label: "震荡整理", status: "neutral" },
+        { range: "价格在均线下方", label: "下降趋势", status: "danger" },
+      ],
+    },
+    tip: "MA20 反映短期趋势，MA50 反映中期趋势，MA200 反映长期趋势。三线多头排列（短>中>长）是最理想的买入形态。",
+  },
+  newsSentiment: {
+    term: "新闻情绪",
+    definition: "通过 AI 分析近期新闻报道中的情感倾向，量化市场对该股票的乐观/悲观程度。范围 -1 到 +1。",
+    benchmark: {
+      levels: [
+        { range: "> +0.4", label: "强烈看涨", status: "good" },
+        { range: "+0.2 ~ +0.4", label: "偏多", status: "good" },
+        { range: "-0.2 ~ +0.2", label: "中性", status: "neutral" },
+        { range: "-0.4 ~ -0.2", label: "偏空", status: "warning" },
+        { range: "< -0.4", label: "强烈看跌（触发情绪门控）", status: "danger" },
+      ],
+    },
+    tip: "情绪分 < -0.4 时系统会触发「情绪门控」自动阻止买入信号。极端悲观时反向操作需要经验，新手建议观望。",
+  },
+  analystRating: {
+    term: "分析师评级",
+    definition: "华尔街职业分析师对该股票的投资评级汇总。Strong Buy/Buy 为看好，Hold 为中性，Sell/Strong Sell 为看空。",
+    benchmark: {
+      levels: [
+        { range: "看好占比 > 70%", label: "高度看好", status: "good" },
+        { range: "看好占比 50-70%", label: "偏看好", status: "neutral" },
+        { range: "看好占比 30-50%", label: "分歧较大", status: "warning" },
+        { range: "看好占比 < 30%", label: "多数看空", status: "danger" },
+      ],
+    },
+    tip: "分析师评级是参考而非决策依据。注意：大多数分析师有「看多偏差」，很少给出卖出评级。70% 看好其实只是中等水平。",
+  },
+  returnRate: {
+    term: "阶段收益率",
+    definition: "股票在特定时间段内的价格涨跌幅。正值表示上涨，负值表示下跌。是衡量动量和趋势强度的核心指标。",
+    benchmark: {
+      levels: [
+        { range: "6M > +20%", label: "强势上涨（关注中线策略）", status: "good" },
+        { range: "3M > +10%", label: "中期动量良好", status: "good" },
+        { range: "1M ±5%", label: "近期波动正常", status: "neutral" },
+        { range: "1M < -10%", label: "短期跌幅较大", status: "warning" },
+      ],
+    },
+    tip: "6/3/1 个月收益构成 RS Rating 的计算基础。中线策略要求三个时段收益均为正且递增（加速上涨趋势）。",
+  },
+  // ─── 触发原因指标 ───
+  moatScore: {
+    term: "Moat Score（护城河评分）",
+    definition: "基于 Hamilton Helmer「7 Powers」框架的竞争优势评分，满分 35 分（7 项能力各 0-5 分）。分数越高，公司的护城河越深。",
+    benchmark: {
+      levels: [
+        { range: "≥ 25/35", label: "护城河强劲，可触发 STRONG_BUY", status: "good" },
+        { range: "20 - 24", label: "护城河较好，需关注弱项", status: "neutral" },
+        { range: "15 - 19", label: "护城河一般", status: "warning" },
+        { range: "< 15", label: "护城河薄弱，不建议长线持有", status: "danger" },
+      ],
+    },
+    tip: "护城河评分需要人工审核确认。AI 提议后你可以调整每项得分，审批通过且 ≥ 25 分才会触发 STRONG_BUY 信号。",
+  },
+  topPower: {
+    term: "Top Power（最强竞争力）",
+    definition: "7 Powers 中得分最高的竞争优势来源，代表公司最核心的护城河。7 种力量包括：规模经济、网络效应、反定位、转换成本、品牌、垄断资源、流程优势。",
+    benchmark: {
+      levels: [
+        { range: "Network Effects", label: "网络效应 — 用户越多越强", status: "good" },
+        { range: "Switching Costs", label: "转换成本 — 客户粘性高", status: "good" },
+        { range: "Scale Economies", label: "规模经济 — 成本优势", status: "good" },
+        { range: "Branding", label: "品牌 — 溢价能力", status: "neutral" },
+      ],
+    },
+    tip: "拥有「网络效应」或「转换成本」的公司往往护城河最持久。关注 Top Power 可以快速判断公司核心竞争力来源。",
+  },
+  confidence: {
+    term: "Confidence（AI 信心度）",
+    definition: "AI 模型对护城河评估结果的置信程度。High = 数据充分、判断明确；Medium = 部分指标模糊；Low = 数据不足或存在矛盾信息。",
+    benchmark: {
+      levels: [
+        { range: "High", label: "信心充足，评分可靠", status: "good" },
+        { range: "Medium", label: "部分不确定，建议人工复核", status: "warning" },
+        { range: "Low", label: "数据不足，需谨慎对待评分", status: "danger" },
+      ],
+    },
+    tip: "信心度低不代表公司不好，只是 AI 缺乏足够数据。建议对 Low confidence 的评分做更多独立调研后再决定。",
+  },
+  roe: {
+    term: "ROE（净资产收益率）",
+    definition: "净利润 ÷ 股东权益。衡量公司用股东的钱赚钱的效率，是巴菲特最看重的指标之一。",
+    benchmark: {
+      levels: [
+        { range: "≥ 20%", label: "优秀（强盈利能力）", status: "good" },
+        { range: "15% - 20%", label: "良好（达到 OMEGA 长线门槛）", status: "good" },
+        { range: "10% - 15%", label: "中等", status: "neutral" },
+        { range: "< 10%", label: "偏低（资金使用效率不高）", status: "warning" },
+      ],
+    },
+    tip: "OMEGA 长线策略要求 ROE ≥ 15%。持续高 ROE（>20%）是护城河的强信号。注意：高负债也能推高 ROE，需结合负债率看。",
+  },
+  revenueGrowth: {
+    term: "Revenue Growth（营收增长率）",
+    definition: "公司营业收入的同比增长率。反映公司业务规模的扩张速度，是成长性的核心指标。",
+    benchmark: {
+      levels: [
+        { range: "> 20%", label: "高速增长", status: "good" },
+        { range: "10% - 20%", label: "稳健增长", status: "good" },
+        { range: "5% - 10%", label: "温和增长（达到 OMEGA 长线门槛）", status: "neutral" },
+        { range: "< 5%", label: "增长停滞", status: "warning" },
+        { range: "< 0%", label: "营收下滑", status: "danger" },
+      ],
+    },
+    tip: "OMEGA 长线策略要求营收增长 ≥ 5%。高增长要可持续才有意义，一次性收入推动的增长不靠谱。",
+  },
+  grossMargin: {
+    term: "Gross Margin（毛利率）",
+    definition: "（营收 - 成本）÷ 营收。衡量公司产品/服务的定价能力和成本控制能力，是竞争壁垒的直接体现。",
+    benchmark: {
+      levels: [
+        { range: "> 60%", label: "极高（软件/平台型公司）", status: "good" },
+        { range: "40% - 60%", label: "优秀（达到 OMEGA 长线门槛）", status: "good" },
+        { range: "30% - 40%", label: "良好", status: "neutral" },
+        { range: "20% - 30%", label: "中等（制造业/零售）", status: "neutral" },
+        { range: "< 20%", label: "偏低（竞争激烈）", status: "warning" },
+      ],
+    },
+    tip: "OMEGA 长线策略要求毛利率 ≥ 30%。高毛利率意味着产品有定价权或技术壁垒。毛利率持续下降是危险信号。",
+  },
+  priceVsMa: {
+    term: "Price vs MA（价格与均线）",
+    definition: "当前股价与移动平均线的对比。价格在均线上方说明处于上升趋势，下方说明处于下降趋势。",
+    benchmark: {
+      levels: [
+        { range: "Price > MA50", label: "中期上升趋势（中线策略看好）", status: "good" },
+        { range: "Price > MA200", label: "长期上升趋势", status: "good" },
+        { range: "Price < MA50", label: "中期趋势转弱", status: "warning" },
+        { range: "Price < MA200", label: "长期趋势走弱", status: "danger" },
+      ],
+    },
+    tip: "中线策略要求 Price > MA50（50日均线之上）。价格同时在 MA50 和 MA200 之上时，是最安全的趋势环境。",
+  },
+  return3m: {
+    term: "3M Return（3 个月收益率）",
+    definition: "过去 3 个月的价格涨跌幅。正值表示近期表现良好，是中线动量策略的重要参考指标。",
+    benchmark: {
+      levels: [
+        { range: "> +15%", label: "强势（动量充沛）", status: "good" },
+        { range: "+5% ~ +15%", label: "正常上涨", status: "good" },
+        { range: "-5% ~ +5%", label: "横盘震荡", status: "neutral" },
+        { range: "< -5%", label: "回调中", status: "warning" },
+      ],
+    },
+    tip: "中线策略（RS_BREAKOUT）要求 3M 收益为正。如果 3M 收益远超 1M，说明上涨正在加速。",
+  },
+};
+
 export function matchIndicatorGlossary(indicatorText: string): GlossaryEntry | null {
   const lower = indicatorText.toLowerCase();
   for (const [keyword, key] of Object.entries(INDICATOR_KEYWORDS)) {
     if (lower.includes(keyword)) {
       return SIGNAL_GLOSSARY[key] || null;
+    }
+  }
+  return null;
+}
+
+// ─── 工具：根据触发原因文本匹配 glossary entry ───
+
+const REASON_KEYWORDS: { keyword: string; glossary: "signal" | "stock"; key: string }[] = [
+  // 护城河相关（长线信号）
+  { keyword: "moat score", glossary: "stock", key: "moatScore" },
+  { keyword: "moat", glossary: "stock", key: "moatScore" },
+  { keyword: "top power", glossary: "stock", key: "topPower" },
+  { keyword: "confidence", glossary: "stock", key: "confidence" },
+  { keyword: "roe", glossary: "stock", key: "roe" },
+  { keyword: "revenue growth", glossary: "stock", key: "revenueGrowth" },
+  { keyword: "gross margin", glossary: "stock", key: "grossMargin" },
+  // 中线指标
+  { keyword: "rs rating", glossary: "signal", key: "rsRating" },
+  { keyword: "rs_rating", glossary: "signal", key: "rsRating" },
+  { keyword: "price", glossary: "stock", key: "priceVsMa" },
+  { keyword: "ma50", glossary: "stock", key: "priceVsMa" },
+  { keyword: "ma200", glossary: "stock", key: "priceVsMa" },
+  { keyword: "3m:", glossary: "stock", key: "return3m" },
+  { keyword: "3m return", glossary: "stock", key: "return3m" },
+  // 短线指标
+  { keyword: "rsi", glossary: "signal", key: "rsi" },
+  { keyword: "bollinger", glossary: "signal", key: "bollingerBands" },
+  { keyword: "布林带", glossary: "signal", key: "bollingerBands" },
+  // 通用
+  { keyword: "vix", glossary: "signal", key: "vix" },
+  { keyword: "vcp", glossary: "signal", key: "vcp" },
+  { keyword: "pocket pivot", glossary: "signal", key: "pocketPivot" },
+];
+
+export function matchReasonGlossary(reasonText: string): GlossaryEntry | null {
+  const lower = reasonText.toLowerCase();
+  for (const { keyword, glossary, key } of REASON_KEYWORDS) {
+    if (lower.includes(keyword)) {
+      const source = glossary === "signal" ? SIGNAL_GLOSSARY : STOCK_GLOSSARY;
+      return source[key] || null;
     }
   }
   return null;

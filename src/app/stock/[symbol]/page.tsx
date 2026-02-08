@@ -3,7 +3,7 @@
 import { use, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon, Newspaper, Users, Check, X, Loader2, Shield, Plus, Zap } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, RefreshCw, BarChart3, LineChart, CandlestickChart as CandleIcon, Newspaper, Users, Check, X, Loader2, Shield, Plus, Zap, ExternalLink } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MainContent } from "@/components/layout/MainContent";
 import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
@@ -17,6 +17,8 @@ import { useMoatData, useMoatActions } from "@/hooks/useMoatData";
 import { MoatPowersGrid } from "@/components/signals/MoatPowersGrid";
 import { NewsSection } from "@/components/news/NewsSection";
 import { MoatNewsFeed, useMoatNewsCount } from "@/components/news/MoatNewsFeed";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { STOCK_GLOSSARY, SIGNAL_GLOSSARY, matchReasonGlossary } from "@/lib/glossary";
 import {
   TechnicalChart,
   TimeRangeSelector,
@@ -162,7 +164,41 @@ export default function StockDetailPage({ params }: PageProps) {
                 <ArrowLeft className="w-5 h-5 text-stripe-ink-light" />
               </button>
               <div>
-                <h1 className="text-lg font-semibold text-stripe-ink">{symbol}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-semibold text-stripe-ink">{symbol}</h1>
+                  <div className="flex items-center gap-0.5">
+                    <a
+                      href={`https://finance.yahoo.com/quote/${symbol}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-stripe-ink-lighter hover:text-stripe-purple hover:bg-stripe-bg transition-colors"
+                      title="Yahoo Finance — 综合概览"
+                    >
+                      Yahoo
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`https://seekingalpha.com/symbol/${symbol}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-stripe-ink-lighter hover:text-stripe-purple hover:bg-stripe-bg transition-colors"
+                      title="Seeking Alpha — 深度分析"
+                    >
+                      SA
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`https://stockanalysis.com/stocks/${symbol.toLowerCase()}/financials/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-stripe-ink-lighter hover:text-stripe-purple hover:bg-stripe-bg transition-colors"
+                      title="Stock Analysis — 财务报表"
+                    >
+                      财报
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                </div>
                 <p className="text-sm text-stripe-ink-lighter">
                   {data?.name || "加载中..."}
                 </p>
@@ -217,19 +253,28 @@ export default function StockDetailPage({ params }: PageProps) {
                   </div>
                   <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div>
-                      <p className="text-sm text-stripe-ink-lighter">市值</p>
+                      <p className="text-sm text-stripe-ink-lighter flex items-center gap-1">
+                        市值
+                        <InfoTooltip entry={STOCK_GLOSSARY.marketCap} />
+                      </p>
                       <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {formatMarketCap(data?.marketCap)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-stripe-ink-lighter">市盈率</p>
+                      <p className="text-sm text-stripe-ink-lighter flex items-center gap-1">
+                        市盈率
+                        <InfoTooltip entry={STOCK_GLOSSARY.peRatio} />
+                      </p>
                       <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {formatNumber(data?.pe)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-stripe-ink-lighter">成交量</p>
+                      <p className="text-sm text-stripe-ink-lighter flex items-center gap-1">
+                        成交量
+                        <InfoTooltip entry={STOCK_GLOSSARY.volume} />
+                      </p>
                       <p className="text-base md:text-lg font-semibold text-stripe-ink">
                         {data?.volume ? (data.volume / 1e6).toFixed(2) + "M" : "N/A"}
                       </p>
@@ -282,11 +327,15 @@ export default function StockDetailPage({ params }: PageProps) {
                             <div className="mb-3 p-3 bg-white rounded-md border border-stripe-border-light">
                               <p className="text-xs font-medium text-stripe-ink mb-1.5">触发原因</p>
                               <div className="space-y-1">
-                                {sig.reasons.map((r, i) => (
-                                  <p key={i} className={`text-sm leading-snug ${i === 0 ? "text-stripe-ink font-medium" : "text-stripe-ink-light"}`}>
-                                    {r}
-                                  </p>
-                                ))}
+                                {sig.reasons.map((r, i) => {
+                                  const reasonEntry = matchReasonGlossary(r);
+                                  return (
+                                    <p key={i} className={`text-sm leading-snug flex items-center gap-1 ${i === 0 ? "text-stripe-ink font-medium" : "text-stripe-ink-light"}`}>
+                                      {r}
+                                      {reasonEntry && <InfoTooltip entry={reasonEntry} />}
+                                    </p>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -356,7 +405,10 @@ export default function StockDetailPage({ params }: PageProps) {
               <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 mb-6 shadow-[var(--shadow-omega-sm)]">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div className="flex items-center gap-4">
-                    <h3 className="font-semibold text-stripe-ink">技术走势</h3>
+                    <h3 className="font-semibold text-stripe-ink flex items-center gap-1">
+                      技术走势
+                      <InfoTooltip entry={STOCK_GLOSSARY.technicalChart} />
+                    </h3>
                     {/* Chart Type Selector */}
                     <div className="flex items-center gap-1 p-1 bg-stripe-bg rounded-lg">
                       <button
@@ -522,7 +574,10 @@ export default function StockDetailPage({ params }: PageProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
                 {/* RS Rating */}
                 <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
-                  <h3 className="font-semibold text-stripe-ink mb-4">中线指标 · RS 评级</h3>
+                  <h3 className="font-semibold text-stripe-ink mb-4 flex items-center gap-1">
+                    中线指标 · RS 评级
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.rsRating} />
+                  </h3>
                   <div className="flex items-center gap-4">
                     <div
                       className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-xl md:text-2xl font-bold ${
@@ -537,19 +592,22 @@ export default function StockDetailPage({ params }: PageProps) {
                     </div>
                     <div className="flex-1">
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-stripe-ink-lighter">6 个月收益</span>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-stripe-ink-lighter flex items-center gap-1">
+                            6 个月收益
+                            <InfoTooltip entry={STOCK_GLOSSARY.returnRate} />
+                          </span>
                           <span className={data?.return6m && data.return6m >= 0 ? "text-stripe-success" : "text-stripe-danger"}>
                             {formatPercent(data?.return6m)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm">
                           <span className="text-stripe-ink-lighter">3 个月收益</span>
                           <span className={data?.return3m && data.return3m >= 0 ? "text-stripe-success" : "text-stripe-danger"}>
                             {formatPercent(data?.return3m)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm">
                           <span className="text-stripe-ink-lighter">1 个月收益</span>
                           <span className={data?.return1m && data.return1m >= 0 ? "text-stripe-success" : "text-stripe-danger"}>
                             {formatPercent(data?.return1m)}
@@ -562,7 +620,10 @@ export default function StockDetailPage({ params }: PageProps) {
 
                 {/* RSI */}
                 <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
-                  <h3 className="font-semibold text-stripe-ink mb-4">短线指标 · RSI</h3>
+                  <h3 className="font-semibold text-stripe-ink mb-4 flex items-center gap-1">
+                    短线指标 · RSI
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.rsi} />
+                  </h3>
                   <div className="flex items-center gap-4">
                     <div
                       className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-xl md:text-2xl font-bold ${
@@ -604,7 +665,10 @@ export default function StockDetailPage({ params }: PageProps) {
 
                 {/* 布林带 */}
                 <div className="bg-white rounded-lg border border-stripe-border p-4 md:p-6 shadow-[var(--shadow-omega-sm)]">
-                  <h3 className="font-semibold text-stripe-ink mb-4">短线指标 · 布林带</h3>
+                  <h3 className="font-semibold text-stripe-ink mb-4 flex items-center gap-1">
+                    短线指标 · 布林带
+                    <InfoTooltip entry={SIGNAL_GLOSSARY.bollingerBands} />
+                  </h3>
                   {data?.bollinger ? (
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
@@ -656,6 +720,7 @@ export default function StockDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2 mb-4">
                     <Newspaper className="w-4 h-4 text-stripe-purple" />
                     <h3 className="font-semibold text-stripe-ink">新闻情绪</h3>
+                    <InfoTooltip entry={STOCK_GLOSSARY.newsSentiment} />
                   </div>
                   {sentiment ? (
                     <div className="space-y-3">
@@ -730,6 +795,7 @@ export default function StockDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-4 h-4 text-stripe-purple" />
                     <h3 className="font-semibold text-stripe-ink">分析师评级</h3>
+                    <InfoTooltip entry={STOCK_GLOSSARY.analystRating} />
                   </div>
                   {recommendations.length > 0 ? (() => {
                     const latest = recommendations[0];

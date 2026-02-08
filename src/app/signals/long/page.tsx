@@ -85,6 +85,7 @@ export default function LongSignalsPage() {
       change: moatStats.pending > 0 ? `${moatStats.pending} 待审核` : undefined,
       changeType: "neutral",
       icon: <Shield className="w-5 h-5 text-stripe-purple" />,
+      glossaryKey: "moatAnalyzed",
     },
     {
       label: "护城河已通过",
@@ -94,26 +95,31 @@ export default function LongSignalsPage() {
         : undefined,
       changeType: "positive",
       icon: <CheckCircle className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "moatPassed",
     },
     {
       label: "买入信号",
       value: stats?.byType.buy ?? 0,
       icon: <TrendingUp className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "buySignals",
     },
     {
       label: "已确认",
       value: byDecision?.confirmed ?? 0,
       icon: <Check className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "confirmed",
     },
     {
       label: "已忽略",
       value: byDecision?.ignored ?? 0,
       icon: <X className="w-5 h-5 text-stripe-ink-lighter" />,
+      glossaryKey: "ignored",
     },
     {
       label: "待决策",
       value: byDecision?.pending ?? 0,
       icon: <AlertCircle className="w-5 h-5 text-stripe-purple" />,
+      glossaryKey: "pendingDecision",
     },
   ];
 

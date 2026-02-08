@@ -39,31 +39,37 @@ export default function ShortSignalsPage() {
       label: "买入信号",
       value: stats?.byType.buy ?? 0,
       icon: <TrendingUp className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "buySignals",
     },
     {
       label: "卖出信号",
       value: stats?.byType.sell ?? 0,
       icon: <TrendingDown className="w-5 h-5 text-stripe-danger" />,
+      glossaryKey: "sellSignals",
     },
     {
       label: "预警信号",
       value: stats?.byType.alert ?? 0,
       icon: <AlertTriangle className="w-5 h-5 text-stripe-warning" />,
+      glossaryKey: "alertSignals",
     },
     {
       label: "已确认",
       value: byDecision?.confirmed ?? 0,
       icon: <Check className="w-5 h-5 text-stripe-success" />,
+      glossaryKey: "confirmed",
     },
     {
       label: "已忽略",
       value: byDecision?.ignored ?? 0,
       icon: <X className="w-5 h-5 text-stripe-ink-lighter" />,
+      glossaryKey: "ignored",
     },
     {
       label: "今日活跃",
       value: stats?.active ?? 0,
       icon: <Zap className="w-5 h-5 text-stripe-warning" />,
+      glossaryKey: "activeSignals",
     },
   ];
 

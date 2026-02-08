@@ -5,7 +5,7 @@ import { Building2, TrendingUp, Zap, PieChart, Clock, Target, ArrowUpRight, Arro
 import { TradingSignal, STRATEGY_CONFIG, ACTION_CONFIG, SIGNAL_TYPE_CONFIG, DECISION_CONFIG } from "@/types/signals";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
-import { STRATEGY_GLOSSARY, SIGNAL_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
+import { STRATEGY_GLOSSARY, SIGNAL_GLOSSARY, STATS_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
 import { signalsApi } from "@/lib/api";
 
 interface SignalCardProps {
@@ -125,8 +125,9 @@ export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProp
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-stripe-ink-lighter" />
-          <span className="text-sm text-stripe-ink dark:text-white">
+          <span className="text-sm text-stripe-ink dark:text-white flex items-center gap-0.5">
             评分 <span className="font-semibold">{signal.score}</span>
+            <InfoTooltip entry={STATS_GLOSSARY.signalScore} />
           </span>
         </div>
         {signal.price && (
@@ -202,8 +203,9 @@ export function SignalCard({ signal, onClick, onDecisionChange }: SignalCardProp
           {formatTime(signal.timestamp)}
         </div>
         {signal.suggested_position > 0 && (
-          <span className="text-xs text-stripe-purple font-medium">
+          <span className="text-xs text-stripe-purple font-medium flex items-center gap-0.5">
             建议仓位 {(signal.suggested_position * 100).toFixed(0)}%
+            <InfoTooltip entry={STATS_GLOSSARY.suggestedPosition} />
           </span>
         )}
       </div>

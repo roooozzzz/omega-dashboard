@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { STOCK_GLOSSARY } from "@/lib/glossary";
 import {
   Table,
   TableBody,
@@ -110,10 +112,16 @@ export function MoatScannerTable() {
                 行业
               </TableHead>
               <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                护城河评分
+                <span className="flex items-center gap-0.5">
+                  护城河评分
+                  <InfoTooltip entry={STOCK_GLOSSARY.moatScore} />
+                </span>
               </TableHead>
               <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
-                置信度
+                <span className="flex items-center gap-0.5">
+                  置信度
+                  <InfoTooltip entry={STOCK_GLOSSARY.confidence} />
+                </span>
               </TableHead>
               <TableHead className="text-xs font-medium text-stripe-ink-lighter uppercase tracking-wide">
                 状态
