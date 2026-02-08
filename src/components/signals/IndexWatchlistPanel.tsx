@@ -28,7 +28,11 @@ function HealthDot({ status }: { status: IndexETFData["healthStatus"] }) {
 
 function ETFCard({ etf }: { etf: IndexETFData }) {
   const isUp = etf.changePercent >= 0;
-  const peRatio = etf.pe5yAvg > 0 ? etf.pe / etf.pe5yAvg : 1;
+  const pe = etf.pe ?? 0;
+  const pe5yAvg = etf.pe5yAvg ?? 0;
+  const dividendYield = etf.dividendYield ?? 0;
+  const rsi14 = etf.rsi14 ?? 50;
+  const peRatio = pe5yAvg > 0 ? pe / pe5yAvg : 1;
   const peStatus = peRatio < 0.9 ? "text-emerald-600" : peRatio > 1.1 ? "text-red-500" : "text-stripe-ink";
 
   return (
@@ -74,8 +78,8 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
             <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexPe} iconSize="sm" />
           </span>
           <span className={`font-medium ${peStatus}`}>
-            {etf.pe.toFixed(1)}
-            <span className="text-stripe-ink-lighter dark:text-gray-600 font-normal"> / {etf.pe5yAvg.toFixed(1)}</span>
+            {pe.toFixed(1)}
+            <span className="text-stripe-ink-lighter dark:text-gray-600 font-normal"> / {pe5yAvg.toFixed(1)}</span>
           </span>
         </div>
         <div className="flex justify-between items-center">
@@ -83,7 +87,7 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
             股息率
             <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexDividendYield} iconSize="sm" />
           </span>
-          <span className="font-medium text-stripe-ink dark:text-gray-300">{etf.dividendYield.toFixed(2)}%</span>
+          <span className="font-medium text-stripe-ink dark:text-gray-300">{dividendYield.toFixed(2)}%</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-stripe-ink-lighter dark:text-gray-500 flex items-center gap-0.5">
@@ -99,8 +103,8 @@ function ETFCard({ etf }: { etf: IndexETFData }) {
             RSI(14)
             <InfoTooltip entry={INDEX_METRIC_GLOSSARY.indexRsi14} iconSize="sm" />
           </span>
-          <span className={`font-medium ${etf.rsi14 < 30 ? "text-emerald-600" : etf.rsi14 > 70 ? "text-red-500" : "text-stripe-ink dark:text-gray-300"}`}>
-            {etf.rsi14.toFixed(1)}
+          <span className={`font-medium ${rsi14 < 30 ? "text-emerald-600" : rsi14 > 70 ? "text-red-500" : "text-stripe-ink dark:text-gray-300"}`}>
+            {rsi14.toFixed(1)}
           </span>
         </div>
       </div>

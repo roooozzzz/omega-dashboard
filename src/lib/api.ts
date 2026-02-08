@@ -748,12 +748,12 @@ export interface IndexETFData {
   price: number;
   change: number;
   changePercent: number;
-  pe: number;
-  pe5yAvg: number;
-  dividendYield: number;
-  ma200: number;
+  pe: number | null;
+  pe5yAvg: number | null;
+  dividendYield: number | null;
+  ma200: number | null;
   aboveMa200: boolean;
-  rsi14: number;
+  rsi14: number | null;
   expenseRatio: number;
   healthStatus: "healthy" | "watch" | "caution";
   updatedAt: string;
