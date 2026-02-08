@@ -62,8 +62,14 @@ export function useSignals(options: UseSignalsOptions = {}): UseSignalsResult {
 
       const signalsRes = await signalsApi.getAll(filters);
 
-      setSignals(signalsRes.signals || []);
-      setTotal(signalsRes.total || 0);
+      // 客户端安全过滤：确保只展示匹配策略的信号
+      let filteredSignals = signalsRes.signals || [];
+      if (strategy) {
+        filteredSignals = filteredSignals.filter(s => s.strategy === strategy);
+      }
+
+      setSignals(filteredSignals);
+      setTotal(filteredSignals.length);
 
       // stats 已在 api.ts 的 mapSignalStats 中完成映射
       if (signalsRes.stats) {
