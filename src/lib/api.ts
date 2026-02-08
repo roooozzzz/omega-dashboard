@@ -778,6 +778,36 @@ export const indexApi = {
     request<IndexETFData>(`/api/index/detail/${encodeURIComponent(symbol)}`),
 };
 
+// ============ 系统设置 ============
+export interface SettingsData {
+  notifications: {
+    emailAlerts: boolean;
+    pushNotifications: boolean;
+    signalAlerts: boolean;
+    dailyDigest: boolean;
+  };
+  trading: {
+    autoRefresh: boolean;
+    refreshInterval: number;
+    riskLevel: string;
+    maxPositionSize: number;
+  };
+  strategyAllocation: {
+    longPct: number;
+    midPct: number;
+    shortPct: number;
+  };
+}
+
+export const settingsApi = {
+  get: () => request<SettingsData>("/api/settings"),
+  update: (data: SettingsData) =>
+    request<SettingsData>("/api/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+};
+
 export default {
   market: marketApi,
   stock: stockApi,
@@ -785,5 +815,6 @@ export default {
   signals: signalsApi,
   news: newsApi,
   index: indexApi,
+  settings: settingsApi,
   createSignalWebSocket,
 };
