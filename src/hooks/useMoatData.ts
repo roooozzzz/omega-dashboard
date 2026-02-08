@@ -77,14 +77,16 @@ export function useMoatData(ticker: string | null): UseMoatDataResult {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 404) {
-          setError(`${ticker} 暂无护城河评分`);
+          // ETF 等无护城河评分的标的，404 是正常的，静默处理
+          setData(null);
         } else {
           setError(err.message);
+          console.error(`Moat data fetch error for ${ticker}:`, err);
         }
       } else {
         setError(`获取 ${ticker} 护城河数据失败`);
+        console.error(`Moat data fetch error for ${ticker}:`, err);
       }
-      console.error(`Moat data fetch error for ${ticker}:`, err);
     } finally {
       setLoading(false);
     }
