@@ -16,11 +16,12 @@ import { StrategyStats, StatCardConfig } from "@/components/signals/StrategyStat
 import { SignalsFilters } from "@/components/signals/SignalsFilters";
 import { SignalsTable } from "@/components/signals/SignalsTable";
 import { DecisionHistory } from "@/components/signals/DecisionHistory";
-import { useSignals, useSignalStream } from "@/hooks/useSignals";
+import { useSignals, useSignalStream, useCrossStrategyMap } from "@/hooks/useSignals";
 
 export default function ShortSignalsPage() {
   const [searchText, setSearchText] = useState("");
   const [action, setAction] = useState("");
+  const crossMap = useCrossStrategyMap("short");
   const { stats, loading, error, refresh } = useSignals({
     strategy: "short",
     autoRefresh: true,
@@ -89,7 +90,7 @@ export default function ShortSignalsPage() {
           action={action}
           onActionChange={setAction}
         />
-        <SignalsTable strategy="short" ticker={searchText || undefined} action={action || undefined} />
+        <SignalsTable strategy="short" ticker={searchText || undefined} action={action || undefined} crossStrategyMap={crossMap} />
         <div className="mt-6">
           <DecisionHistory strategy="short" />
         </div>

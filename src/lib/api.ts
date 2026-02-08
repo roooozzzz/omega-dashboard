@@ -265,6 +265,7 @@ export interface MoatData {
     processPower: MoatPower;
   };
   aiSummary?: string;
+  source?: string;
   analyzedAt: string;
   reviewedAt?: string;
 }
@@ -302,6 +303,7 @@ interface MoatProposalRaw {
   createdAt: string;
   reviewedAt: string | null;
   reviewerNotes: string | null;
+  source: string | null;
 }
 
 /** 7 Powers 元数据：中文名、英文键名、满分 */
@@ -337,6 +339,7 @@ function mapMoatProposal(raw: MoatProposalRaw): MoatData {
     status: raw.status.toLowerCase() as MoatData["status"],
     powers,
     aiSummary: raw.analysisSummary,
+    source: raw.source ?? undefined,
     analyzedAt: raw.createdAt,
     reviewedAt: raw.reviewedAt ?? undefined,
   };
@@ -681,6 +684,62 @@ export function createSignalWebSocket(
   return { connect, disconnect };
 }
 
+// ============ 新闻数据 ============
+export interface NewsTagData {
+  power: string;
+  impact: "positive" | "negative" | "neutral";
+  summary?: string;
+  taggedAt?: string;
+}
+
+export interface NewsArticleData {
+  id: number;
+  symbol: string;
+  title: string;
+  content?: string;
+  url?: string;
+  source?: string;
+  publishedAt?: string;
+  sentimentScore?: number;
+  isTagged: boolean;
+  tags: NewsTagData[];
+}
+
+export interface NewsListResponse {
+  articles: NewsArticleData[];
+  total: number;
+}
+
+export const newsApi = {
+  getStockNews: (
+    symbol: string,
+    options: { limit?: number; offset?: number; taggedOnly?: boolean; power?: string } = {}
+  ): Promise<NewsListResponse> => {
+    const params = new URLSearchParams();
+    if (options.limit) params.set("limit", options.limit.toString());
+    if (options.offset) params.set("offset", options.offset.toString());
+    if (options.taggedOnly) params.set("tagged_only", "true");
+    if (options.power) params.set("power", options.power);
+    const query = params.toString();
+    return request<NewsListResponse>(
+      `/api/news/${encodeURIComponent(symbol)}${query ? `?${query}` : ""}`
+    );
+  },
+
+  getMoatFeed: (
+    symbol: string,
+    options: { limit?: number; power?: string } = {}
+  ): Promise<NewsListResponse> => {
+    const params = new URLSearchParams();
+    if (options.limit) params.set("limit", options.limit.toString());
+    if (options.power) params.set("power", options.power);
+    const query = params.toString();
+    return request<NewsListResponse>(
+      `/api/news/${encodeURIComponent(symbol)}/moat-feed${query ? `?${query}` : ""}`
+    );
+  },
+};
+
 // ============ 指数策略 ============
 export interface IndexETFData {
   symbol: string;
@@ -724,6 +783,7 @@ export default {
   stock: stockApi,
   moat: moatApi,
   signals: signalsApi,
+  news: newsApi,
   index: indexApi,
   createSignalWebSocket,
 };

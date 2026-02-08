@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { SourceBadge } from "@/components/shared/SourceBadge";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { SIGNAL_GLOSSARY, matchIndicatorGlossary } from "@/lib/glossary";
 import { MoatPowersGrid } from "@/components/signals/MoatPowersGrid";
@@ -219,6 +220,7 @@ function MoatExpandedRow({
         {moat.sector && (
           <StatusBadge variant="neutral">{moat.sector}</StatusBadge>
         )}
+        <SourceBadge source={moat.source} />
         {!isPending && (
           <StatusBadge variant={moat.status === "verified" ? "success" : "danger"}>
             {moat.status === "verified" ? "已通过" : "已拒绝"}
@@ -427,23 +429,29 @@ export function SignalsTable({
                     >
                       {/* 股票 */}
                       <div className="w-[160px] shrink-0">
-                        <Link
-                          href={`/stock/${encodeURIComponent(signal.ticker)}`}
-                          className="flex items-center gap-3 group"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center shrink-0">
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/stock/${encodeURIComponent(signal.ticker)}`}
+                            className="w-8 h-8 rounded-full bg-stripe-bg flex items-center justify-center shrink-0 group"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <span className="text-sm font-medium text-stripe-ink">
                               {signal.ticker[0]}
                             </span>
-                          </div>
+                          </Link>
                           <div className="min-w-0">
-                            <p className="font-medium text-sm text-stripe-ink group-hover:text-stripe-purple transition-colors truncate">
-                              {signal.ticker}
-                            </p>
-                            <p className="text-xs text-stripe-ink-lighter truncate">
-                              {signal.name || signal.ticker}
-                            </p>
+                            <Link
+                              href={`/stock/${encodeURIComponent(signal.ticker)}`}
+                              className="block"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <p className="font-medium text-sm text-stripe-ink hover:text-stripe-purple transition-colors truncate">
+                                {signal.ticker}
+                              </p>
+                              <p className="text-xs text-stripe-ink-lighter truncate">
+                                {signal.name || signal.ticker}
+                              </p>
+                            </Link>
                             {(() => {
                               const crossEntries = crossStrategyMap?.[signal.ticker]?.filter(
                                 (s) => s.strategy !== signal.strategy
@@ -474,7 +482,7 @@ export function SignalsTable({
                               );
                             })()}
                           </div>
-                        </Link>
+                        </div>
                       </div>
                       {/* 信号 */}
                       <div className="w-[70px] shrink-0">

@@ -1,6 +1,8 @@
 "use client";
 
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { STATS_GLOSSARY } from "@/lib/glossary";
 
 export interface StatCardConfig {
   label: string;
@@ -8,6 +10,7 @@ export interface StatCardConfig {
   change?: string;
   changeType?: "positive" | "negative" | "neutral";
   icon: React.ReactNode;
+  glossaryKey?: string;
 }
 
 interface StrategyStatsProps {
@@ -98,17 +101,22 @@ export function StrategyStats({
             key={stat.label}
             className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]"
           >
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-stripe-ink-lighter">{stat.label}</p>
-              {stat.icon}
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-sm text-stripe-ink-lighter truncate">{stat.label}</p>
+                {stat.glossaryKey && STATS_GLOSSARY[stat.glossaryKey] && (
+                  <InfoTooltip entry={STATS_GLOSSARY[stat.glossaryKey]} />
+                )}
+              </div>
+              <div className="shrink-0">{stat.icon}</div>
             </div>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 flex-wrap">
               <span className="text-2xl font-semibold text-stripe-ink">
                 {stat.value}
               </span>
               {stat.change && (
                 <span
-                  className={`text-sm ${
+                  className={`text-sm whitespace-nowrap ${
                     stat.changeType === "positive"
                       ? "text-stripe-success"
                       : stat.changeType === "negative"

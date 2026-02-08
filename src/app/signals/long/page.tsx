@@ -18,7 +18,7 @@ import { StrategyStats, StatCardConfig } from "@/components/signals/StrategyStat
 import { SignalsFilters } from "@/components/signals/SignalsFilters";
 import { SignalsTable } from "@/components/signals/SignalsTable";
 import { DecisionHistory } from "@/components/signals/DecisionHistory";
-import { useSignals, useSignalStream } from "@/hooks/useSignals";
+import { useSignals, useSignalStream, useCrossStrategyMap } from "@/hooks/useSignals";
 import { useMoatList, useMoatActions } from "@/hooks/useMoatData";
 import type { MoatData } from "@/lib/api";
 
@@ -33,6 +33,7 @@ export default function LongSignalsPage() {
     refreshInterval: 30000,
   });
 
+  const crossMap = useCrossStrategyMap("long");
   const { data: moatData, loading: moatLoading, refresh: moatRefresh } = useMoatList(true, 60000);
   const { approve, reject: rejectMoat, propose, approving, rejecting, proposing } = useMoatActions();
 
@@ -174,6 +175,7 @@ export default function LongSignalsPage() {
           onMoatApprove={handleMoatApprove}
           onMoatReject={handleMoatReject}
           moatLoading={approving || rejecting}
+          crossStrategyMap={crossMap}
         />
         <div className="mt-6">
           <DecisionHistory strategy="long" />

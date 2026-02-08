@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMoatList } from "@/hooks/useMoatData";
+import { SourceBadge } from "@/components/shared/SourceBadge";
 
 const confidenceMap: Record<string, "高" | "中" | "低"> = {
   High: "高",
@@ -57,6 +58,7 @@ export function MoatScannerTable() {
     moatScore: d.totalScore || 0,
     confidence: confidenceMap[d.confidence] || "中",
     status: statusMap[d.status] || "待审核",
+    source: d.source,
   }));
 
   return (
@@ -135,9 +137,12 @@ export function MoatScannerTable() {
                       </span>
                     </div>
                     <Link href={`/stock/${proposal.ticker}`} className="hover:underline">
-                      <p className="font-medium text-sm text-stripe-ink">
-                        {proposal.ticker}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium text-sm text-stripe-ink">
+                          {proposal.ticker}
+                        </p>
+                        <SourceBadge source={proposal.source} />
+                      </div>
                       <p className="text-xs text-stripe-ink-lighter">
                         {proposal.name}
                       </p>

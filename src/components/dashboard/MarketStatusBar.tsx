@@ -2,6 +2,8 @@
 
 import { TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { MARKET_GLOSSARY } from "@/lib/glossary";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useSignals } from "@/hooks/useSignals";
 
@@ -12,6 +14,7 @@ interface MarketCard {
   changeType?: "positive" | "negative" | "neutral";
   status?: "success" | "warning" | "danger" | "neutral";
   statusLabel?: string;
+  glossaryKey?: string;
 }
 
 // 静态 demo 数据（API 失败时使用）
@@ -21,12 +24,14 @@ const demoMarketData: MarketCard[] = [
     value: "5,234.18",
     change: "+1.24%",
     changeType: "positive",
+    glossaryKey: "spx",
   },
   {
     label: "纳斯达克100",
     value: "18,432.50",
     change: "+1.68%",
     changeType: "positive",
+    glossaryKey: "ndx",
   },
   {
     label: "VIX 恐慌指数",
@@ -35,32 +40,40 @@ const demoMarketData: MarketCard[] = [
     changeType: "positive",
     status: "success",
     statusLabel: "低波动",
+    glossaryKey: "vix",
   },
   {
     label: "熔断器",
     value: "关闭",
     status: "success",
     statusLabel: "正常",
+    glossaryKey: "circuitBreaker",
   },
   {
     label: "今日信号",
     value: "7",
     status: "neutral",
     statusLabel: "待审核",
+    glossaryKey: "todaySignals",
   },
 ];
 
 function MarketCardComponent({ card }: { card: MarketCard }) {
+  const glossaryEntry = card.glossaryKey ? MARKET_GLOSSARY[card.glossaryKey] : undefined;
+
   return (
     <div className="bg-white rounded-lg border border-stripe-border p-5 shadow-[var(--shadow-omega-sm)]">
-      <p className="text-sm text-stripe-ink-lighter mb-1">{card.label}</p>
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-semibold text-stripe-ink">
+      <div className="flex items-center gap-1 mb-1">
+        <p className="text-sm text-stripe-ink-lighter">{card.label}</p>
+        {glossaryEntry && <InfoTooltip entry={glossaryEntry} />}
+      </div>
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <span className="text-2xl font-semibold text-stripe-ink truncate">
           {card.value}
         </span>
         {card.change && (
           <span
-            className={`flex items-center gap-0.5 text-sm font-medium ${
+            className={`flex items-center gap-0.5 text-sm font-medium whitespace-nowrap ${
               card.changeType === "positive"
                 ? "text-stripe-success"
                 : card.changeType === "negative"
@@ -69,9 +82,9 @@ function MarketCardComponent({ card }: { card: MarketCard }) {
             }`}
           >
             {card.changeType === "positive" ? (
-              <TrendingUp className="w-3.5 h-3.5" />
+              <TrendingUp className="w-3.5 h-3.5 shrink-0" />
             ) : card.changeType === "negative" ? (
-              <TrendingDown className="w-3.5 h-3.5" />
+              <TrendingDown className="w-3.5 h-3.5 shrink-0" />
             ) : null}
             {card.change}
           </span>
@@ -130,6 +143,7 @@ export function MarketStatusBar() {
       value: formatNumber(marketData.spx.value),
       change: formatPercent(marketData.spx.changePercent),
       changeType: marketData.spx.change >= 0 ? "positive" : "negative",
+      glossaryKey: "spx",
     });
   }
 
@@ -140,6 +154,7 @@ export function MarketStatusBar() {
       value: formatNumber(marketData.ndx.value),
       change: formatPercent(marketData.ndx.changePercent),
       changeType: marketData.ndx.change >= 0 ? "positive" : "negative",
+      glossaryKey: "ndx",
     });
   }
 
@@ -153,6 +168,7 @@ export function MarketStatusBar() {
       changeType: marketData.vix.change <= 0 ? "positive" : "negative",
       status: vixStatus.status,
       statusLabel: vixStatus.label,
+      glossaryKey: "vix",
     });
   }
 
@@ -162,6 +178,7 @@ export function MarketStatusBar() {
     value: marketData.circuitBreaker ? "触发" : "关闭",
     status: marketData.circuitBreaker ? "danger" : "success",
     statusLabel: marketData.circuitBreaker ? "警告" : "正常",
+    glossaryKey: "circuitBreaker",
   });
 
   // 今日信号（从后端获取）
@@ -178,6 +195,7 @@ export function MarketStatusBar() {
     value: String(totalSignals),
     status: pendingDecisions > 0 ? "warning" : activeSignals > 0 ? "warning" : "neutral",
     statusLabel: signalStatusLabel,
+    glossaryKey: "todaySignals",
   });
 
   return (
